@@ -72,3 +72,26 @@ class SeedEnsemble:
 
     def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
         return np.mean([m.predict_proba(df[self.cols]) for m in self.members_], axis=0)
+
+
+DEEP_PARAMS = {"hidden_layer_sizes": (64, 32), "alpha": 4.31, "learning_rate_init": 0.000834,
+               "max_iter": 40}  # selected in Phase 6 (time-ordered CV on 2011-2020)
+
+
+class FixedMLP:
+    """Deep MLP with the Phase 6 hyper-parameters, averaged over several seeds.
+    No tuning happens here, so it can be refit every season without touching test data."""
+
+    def __init__(self, cols, params=None, seeds=SEEDS):
+        self.cols, self.params, self.seeds = list(cols), params or DEEP_PARAMS, seeds
+
+    def fit(self, df: pd.DataFrame) -> "FixedMLP":
+        self.members_ = []
+        for s in self.seeds:
+            pipe = _pipeline(s)
+            pipe.set_params(**{f"mlpclassifier__{k}": v for k, v in self.params.items()})
+            self.members_.append(pipe.fit(df[self.cols], df["y"]))
+        return self
+
+    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+        return np.mean([m.predict_proba(df[self.cols]) for m in self.members_], axis=0)

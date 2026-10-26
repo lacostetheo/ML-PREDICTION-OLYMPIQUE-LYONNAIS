@@ -24,7 +24,8 @@ def _load():
 
 
 def logloss_figure(probs, y, dates, title="More information helps, but the bookmaker is still ahead",
-                   filename="phase4_logloss.png") -> Path:
+                   filename="phase4_logloss.png",
+                   xlabel="Log loss on validation seasons 2021–22 (lower is better); bars = 95 % CI") -> Path:
     blocks = week_blocks(dates)
     rows = []
     for name, p in probs.items():
@@ -41,7 +42,7 @@ def logloss_figure(probs, y, dates, title="More information helps, but the bookm
         ax.plot(r.ll, i, "o", color=color, ms=8, mec=style.SURFACE, mew=2)
         ax.text(r.hi + 0.002, i, f"{r.ll:.4f}", va="center", color=style.INK_2, fontsize=9)
     ax.set_yticks(range(len(d)), d["model"])
-    ax.set_xlabel("Log loss on validation seasons 2021–22 (lower is better); bars = 95 % CI")
+    ax.set_xlabel(xlabel)
     ax.set_title(title)
     ax.grid(axis="y", visible=False)
     ax.set_xlim(d["lo"].min() - 0.01, d["hi"].max() + 0.012)

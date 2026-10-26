@@ -1,0 +1,6 @@
+quantity,value
+Mean entropy of bookmaker probabilities,0.9871
+Mean entropy of final LogReg probabilities,0.9791
+"Realised log loss, bookmaker",0.9658
+"Realised log loss, final LogReg",0.9793
+"Realised log loss, naive frequencies",1.0754

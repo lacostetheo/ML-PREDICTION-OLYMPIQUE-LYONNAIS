@@ -1,0 +1,8 @@
+model,n_matches,log_loss,ci_low,ci_high,accuracy
+Class frequency (naive),109,1.0358,0.9903,1.0807,0.4954
+Elo (LogReg),109,0.9789,0.9042,1.0564,0.5138
+LogReg (final),109,0.9818,0.9022,1.064,0.5872
+Gradient boosting,109,0.9714,0.8937,1.0515,0.5688
+MLP deep (5 seeds),109,0.9786,0.9001,1.0601,0.5963
+Ensemble LogReg+GB+MLP,109,0.9762,0.8983,1.057,0.578
+Bookmaker Bet365 (reference),109,0.9531,0.8798,1.0294,0.5688

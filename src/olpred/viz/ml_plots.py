@@ -42,12 +42,47 @@ def online_figure() -> None:
     print(out)
 
 
+def nn_logloss() -> None:
+    probs = dict(np.load(TABLES / "phase6_val_probs.npz"))
+    idx = pd.read_csv(TABLES / "phase6_val_index.csv")
+    dates = idx.merge(pd.read_parquet("data/processed/features.parquet", columns=["match_id", "date"]),
+                      on="match_id")["date"]
+    keep = {k: v for k, v in probs.items() if "[1 seed]" not in k}
+    print(logloss_figure(keep, idx["y"].to_numpy(), dates,
+                         title="Neural networks match, but do not beat, logistic regression",
+                         filename="phase6_logloss.png"))
+
+
+def learning_curve_figure() -> None:
+    d = pd.read_csv(TABLES / "phase6_learning_curve.csv")
+    fig, ax = plt.subplots(figsize=(8.5, 4.4))
+    for col, color in [("LogReg", style.BLUE), ("Gradient Boosting", style.ORANGE),
+                       ("MLP (3-seed avg)", style.AQUA)]:
+        ax.plot(d["n_matches"], d[col], "-o", color=color, ms=6, mec=style.SURFACE, mew=1.5, label=col)
+    ax.set_xscale("log")
+    ax.set_xticks(d["n_matches"], [f"{n:,}\n({k} s.)" for n, k in zip(d["n_matches"], d["seasons"])])
+    ax.minorticks_off()
+    ax.set_xlabel("Training matches (number of most recent seasons)")
+    ax.set_ylabel("Validation log loss (lower is better)")
+    ax.set_title("Learning curves: no sign that the networks would overtake the linear model")
+    ax.legend(loc="upper right")
+    fig.text(0.01, 0.01, "Hyper-parameters fixed (tuned on the full training set), so small-sample points are "
+             "conservative for boosting and the MLP. Validation 2021-22.", color=style.INK_2, fontsize=8)
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    out = FIGURES / "phase6_learning_curve.png"
+    fig.savefig(out); plt.close(fig)
+    print(out)
+
+
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     style.apply()
     ml_logloss()
     if (TABLES / "phase5_online_val_losses.csv").exists():
         online_figure()
+    if (TABLES / "phase6_val_probs.npz").exists():
+        nn_logloss()
+        learning_curve_figure()
 
 
 if __name__ == "__main__":

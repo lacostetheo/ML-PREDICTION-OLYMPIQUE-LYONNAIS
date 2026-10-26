@@ -1,0 +1,17 @@
+model,vs,diff,ci_low,ci_high,significant
+MLP simple (1 hidden layer) [1 seed],Elo (LogReg),-0.0087,-0.0143,-0.0032,True
+MLP simple (1 hidden layer) [1 seed],LogReg: all features,0.0016,-0.0024,0.0054,False
+MLP simple (1 hidden layer) [1 seed],Gradient Boosting,-0.0014,-0.0053,0.0024,False
+MLP simple (1 hidden layer) [1 seed],Bookmaker Bet365 (reference),0.0094,0.0042,0.0147,True
+MLP simple (1 hidden layer) [5-seed avg],Elo (LogReg),-0.0094,-0.0144,-0.0043,True
+MLP simple (1 hidden layer) [5-seed avg],LogReg: all features,0.001,-0.0029,0.0046,False
+MLP simple (1 hidden layer) [5-seed avg],Gradient Boosting,-0.002,-0.0056,0.0015,False
+MLP simple (1 hidden layer) [5-seed avg],Bookmaker Bet365 (reference),0.0088,0.004,0.0137,True
+MLP deep (2-3 hidden layers) [1 seed],Elo (LogReg),-0.0092,-0.0141,-0.0042,True
+MLP deep (2-3 hidden layers) [1 seed],LogReg: all features,0.0011,-0.0021,0.0044,False
+MLP deep (2-3 hidden layers) [1 seed],Gradient Boosting,-0.0018,-0.005,0.0012,False
+MLP deep (2-3 hidden layers) [1 seed],Bookmaker Bet365 (reference),0.009,0.004,0.0141,True
+MLP deep (2-3 hidden layers) [5-seed avg],Elo (LogReg),-0.0098,-0.015,-0.0045,True
+MLP deep (2-3 hidden layers) [5-seed avg],LogReg: all features,0.0005,-0.003,0.0037,False
+MLP deep (2-3 hidden layers) [5-seed avg],Gradient Boosting,-0.0025,-0.0056,0.0005,False
+MLP deep (2-3 hidden layers) [5-seed avg],Bookmaker Bet365 (reference),0.0083,0.0038,0.0128,True

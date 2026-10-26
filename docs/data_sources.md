@@ -36,14 +36,14 @@ Raw data is **never committed** (see `.gitignore`); it is downloaded into
 - `https://understat.com/robots.txt` reads `User-agent: *` / `Disallow: /` → automated access is disallowed, so it is **not used**.
 - Replacement: an **xG proxy** built in-house from football-data shots and shots on target (regression of goals on shots / shots on target, fitted on past seasons only). It is documented as a proxy, not as true xG. Real xG would require a licensed provider.
 
-## 4. Transfermarkt dataset (dcaribou) — market values, lineups ✅
+## 4. Transfermarkt dataset (dcaribou) — market values ✅
 
 - Page: https://www.kaggle.com/datasets/davidcariboo/player-scores (licence declared: **CC0**); downloaded from the public bucket linked in the project README (https://github.com/dcaribou/transfermarkt-datasets).
-- Tables used: `player_valuations` (656k rows, 2000 → 2026-06-12), `game_lineups`, `appearances`, `players`, `clubs`, `transfers`, `games`.
+- Tables used: `player_valuations` (656k rows, 2000 → 2026-06-12) and `games` (only to map clubs by matching results). `game_lineups`, `appearances`, `players`, `clubs` and `transfers` were downloaded but are **not used**.
 - Frequency: automated pipeline **stopped in mid-July 2026**: `games` ends 2026-07-06, `player_valuations` 2026-06-12, and 2026/27 squads are not covered.
 - Limitations / biases:
   - Values are crowd-sourced estimates, updated irregularly; coverage is dense for 2010–2023 and thinner from 2024 (~9k valuation records/year vs ~14k) → last known value is carried forward.
-  - Squad at date T is rebuilt from lineups of matches played **before** T (never from the final squad).
+  - Squad value at date T comes from a monthly snapshot built only from valuations dated strictly before the snapshot day (latest valuation of each player in the previous 12 months, attributed to the club recorded on that valuation). It is **not** rebuilt from line-ups; a player who changed club after his last valuation is still counted for the old club until re-valued.
   - 2026/27: latest snapshot (June 2026) only; transfers after that are not captured.
   - Club names differ from football-data → mapping table required.
   - The data was originally scraped from Transfermarkt, whose own terms were not reviewed; the CC0 label comes from the dataset author. Data stays local and uncommitted.

@@ -12,7 +12,7 @@ NEEDED = [Path("models_store/production.joblib"), Path("data/processed/team_stat
 def test_app_runs_and_reacts_to_inputs():
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("app/streamlit_app.py", default_timeout=180).run()
+    at = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"), default_timeout=180).run()
     assert not at.exception
     selects = {s.label: s for s in at.selectbox}
     selects["Opponent"].select("Paris SG").run()

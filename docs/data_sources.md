@@ -10,7 +10,7 @@ Raw data is **never committed** (see `.gitignore`); it is downloaded into
 
 - URL: https://football-data.co.uk/data.php (files: `mmz4281/<season>/<league>.csv`)
 - Leagues: `E0` Premier League, `SP1` La Liga, `I1` Serie A, `D1` Bundesliga, `F1` Ligue 1
-- Downloaded: seasons 2010/11 → 2026/27 (in progress), 85 files, **29,239 matches** (OL: 593)
+- Downloaded: seasons 2010/11 → 2026/27 (in progress, last match 2026-10-21), 85 files, **29,239 matches** (OL: 593)
 - Variables: date, teams, full-time/half-time score, result, shots, shots on target, corners, fouls, cards, bookmaker odds (B365, Pinnacle, market average/max)
 - Frequency: current season refreshed weekly; past seasons are static
 - **Terms (quoted from the site):** *"it's all FREE, however its use is intended for private individuals only, NOT commercial or data training products using automated bots/scrapers/AI."*
@@ -30,17 +30,23 @@ Raw data is **never committed** (see `.gitignore`); it is downloaded into
 - Status: `api.clubelo.com` resets the connection through the sandbox proxy and `clubelo.com` returns 403 / does not resolve. Terms not read.
 - Plan: **compute our own Elo** from the match results (documented, leakage-free by construction). ClubElo remains an optional cross-check if access is fixed.
 
-## 3. Understat — xG ⚠️ (optional, decision pending)
+## 3. Understat — xG ❌ (excluded)
 
-- URL: https://understat.com (xG for Big-5 leagues since 2014/15)
-- Reachable (HTTP 200). **No terms of use or licence found on the site**; xG values are a proprietary model output.
-- Decision: not used in the core pipeline. If added in the extension tier, data stays local, uncommitted and credited.
+- URL: https://understat.com
+- `https://understat.com/robots.txt` reads `User-agent: *` / `Disallow: /` → automated access is disallowed, so it is **not used**.
+- Replacement: an **xG proxy** built in-house from football-data shots and shots on target (regression of goals on shots / shots on target, fitted on past seasons only). It is documented as a proxy, not as true xG. Real xG would require a licensed provider.
 
-## 4. Kaggle "Football Data from Transfermarkt" (dcaribou) — market values ⚠️ (optional)
+## 4. Transfermarkt dataset (dcaribou) — market values, lineups ✅
 
-- URL: https://www.kaggle.com/datasets/davidcariboo/player-scores
-- Licence declared on the Kaggle page: **CC0 (public domain)**. The description says the data is *scraped from Transfermarkt*; Transfermarkt's own terms were not reviewed, so the uploader's CC0 label may not cover everything.
-- Decision: extension tier only; use market-value snapshots dated strictly before each match; keep data out of git.
+- Page: https://www.kaggle.com/datasets/davidcariboo/player-scores (licence declared: **CC0**); downloaded from the public bucket linked in the project README (https://github.com/dcaribou/transfermarkt-datasets).
+- Tables used: `player_valuations` (656k rows, 2000 → 2026-06-12), `game_lineups`, `appearances`, `players`, `clubs`, `transfers`, `games`.
+- Frequency: automated pipeline **stopped in mid-July 2026**: `games` ends 2026-07-06, `player_valuations` 2026-06-12, and 2026/27 squads are not covered.
+- Limitations / biases:
+  - Values are crowd-sourced estimates, updated irregularly; coverage is dense for 2010–2023 and thinner from 2024 (~9k valuation records/year vs ~14k) → last known value is carried forward.
+  - Squad at date T is rebuilt from lineups of matches played **before** T (never from the final squad).
+  - 2026/27: latest snapshot (June 2026) only; transfers after that are not captured.
+  - Club names differ from football-data → mapping table required.
+  - The data was originally scraped from Transfermarkt, whose own terms were not reviewed; the CC0 label comes from the dataset author. Data stays local and uncommitted.
 
 ## 5. Excluded
 

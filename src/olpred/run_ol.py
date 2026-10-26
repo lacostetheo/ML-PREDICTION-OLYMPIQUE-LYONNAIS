@@ -92,6 +92,7 @@ def main() -> None:
     print("Elo-uncertainty sigma from backtest:", sigma, flush=True)
 
     boot = bootstrap_models(train, cols, lr.C_, n_boot=N_BOOT)
+    joblib.dump({"models": boot, "sigma": sigma}, STORE / "bootstrap_logreg.joblib")  # used by the dashboard
 
     # 1. next round (real fixture list, with bookmaker prices)
     try:

@@ -8,3 +8,4 @@ data/interim/*
 data/processed/*
 !data/*/.gitkeep
 .DS_Store
+models_store/

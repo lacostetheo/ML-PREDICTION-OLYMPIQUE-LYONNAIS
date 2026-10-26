@@ -1,0 +1,17 @@
+season,family,n_columns,delta_log_loss,sd
+2021,Elo rating,4,0.05313,0.006
+2021,Squad market value,6,0.02496,0.00235
+2021,Recent form (3/5/10 matches),30,0.0074,0.00176
+2021,xG proxy,18,0.00301,0.00194
+2021,Shots (on target / against),18,0.00258,0.00164
+2021,Venue form (home/away),9,0.00077,0.00088
+2021,League table,9,0.00071,0.00087
+2021,Fatigue / schedule,6,-0.00022,0.00077
+2022,Elo rating,4,0.04963,0.00507
+2022,Squad market value,6,0.01891,0.00207
+2022,Recent form (3/5/10 matches),30,0.00775,0.00194
+2022,Shots (on target / against),18,0.00334,0.00171
+2022,xG proxy,18,0.0028,0.00124
+2022,Fatigue / schedule,6,0.00173,0.00052
+2022,Venue form (home/away),9,0.00049,0.00081
+2022,League table,9,-0.00092,0.00084

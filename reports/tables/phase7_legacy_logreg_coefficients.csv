@@ -1,0 +1,115 @@
+feature,coef_home_minus_away,coef_draw,family
+elo_diff,0.202,-0.0171,Elo rating
+elo_home,0.1618,-0.0451,Elo rating
+elo_exp_home,0.1334,0.0347,Elo rating
+elo_away,-0.1291,-0.0204,Elo rating
+d_sv_top11_rel,0.1287,-0.0016,Squad market value
+h_sv_top11_rel,0.1037,-0.0132,Squad market value
+a_sv_top11_rel,-0.094,-0.0113,Squad market value
+h_sv_n,-0.0836,-0.0053,Squad market value
+d_pos_norm,0.0674,0.0012,League table
+d_sv_total_rel,0.067,0.0024,Squad market value
+a_sv_total_rel,-0.0646,-0.0082,Squad market value
+d_gdpg_season,0.0599,-0.0086,League table
+a_xg_10,-0.0582,0.0049,xG proxy
+a_sot_10,-0.0582,0.0049,Shots (on target / against)
+h_sv_total_rel,0.0509,-0.0049,Squad market value
+a_sv_n,0.0508,0.0259,Squad market value
+d_gf_venue_5,0.0485,-0.0154,Venue form (home/away)
+a_pos_norm,-0.0478,-0.0306,League table
+h_pos_norm,0.0476,-0.0289,League table
+a_gdpg_season,-0.0454,-0.0132,League table
+h_n_prior,-0.0453,-0.0098,History depth
+d_pts_venue_5,-0.0453,0.0048,Venue form (home/away)
+d_sot_against_10,-0.0452,0.0072,Shots (on target / against)
+d_xga_10,-0.0452,0.0072,xG proxy
+d_pts_10,-0.0452,0.0166,Recent form (3/5/10 matches)
+d_xg_10,0.0435,-0.0075,xG proxy
+d_sot_10,0.0435,-0.0075,Shots (on target / against)
+a_matches_14d,0.0406,0.0053,Fatigue / schedule
+missingindicator_h_sv_total_rel,-0.0399,-0.0077,Squad market value
+missingindicator_h_sv_top11_rel,-0.0399,-0.0077,Squad market value
+h_gdpg_season,0.0384,-0.0252,League table
+h_pts_venue_5,-0.0371,0.0069,Venue form (home/away)
+missingindicator_h_sv_n,-0.0357,0.0063,Squad market value
+h_gf_venue_5,0.035,-0.023,Venue form (home/away)
+d_matches_14d,-0.035,-0.0093,Fatigue / schedule
+h_pts_10,-0.0337,0.0091,Recent form (3/5/10 matches)
+a_gf_venue_5,-0.0332,-0.0034,Venue form (home/away)
+a_n_prior,-0.0332,-0.0004,History depth
+h_xg_5,0.0322,-0.0012,xG proxy
+h_sot_5,0.0322,-0.0012,Shots (on target / against)
+h_ga_5,0.0316,-0.0129,Recent form (3/5/10 matches)
+a_pts_3,0.0299,0.0246,Recent form (3/5/10 matches)
+a_pts_10,0.0297,-0.0141,Recent form (3/5/10 matches)
+a_sot_against_10,0.028,-0.0032,Shots (on target / against)
+a_xga_10,0.028,-0.0032,xG proxy
+a_ga_10,-0.027,0.0011,Recent form (3/5/10 matches)
+a_pts_venue_5,0.0264,0.0003,Venue form (home/away)
+h_ppg_season,0.0258,0.012,League table
+h_sot_against_10,-0.0256,0.0053,Shots (on target / against)
+h_xga_10,-0.0256,0.0053,xG proxy
+d_pts_3,-0.0245,-0.0041,Recent form (3/5/10 matches)
+h_xga_3,-0.022,-0.0119,xG proxy
+h_sot_against_3,-0.022,-0.0119,Shots (on target / against)
+missingindicator_a_sv_n,0.0212,0.0026,Squad market value
+a_gf_10,0.0205,-0.0137,Recent form (3/5/10 matches)
+d_ppg_season,0.0202,0.01,League table
+a_sot_5,0.0197,-0.0056,Shots (on target / against)
+a_xg_5,0.0197,-0.0056,xG proxy
+d_sot_against_3,-0.0195,-0.0087,Shots (on target / against)
+d_xga_3,-0.0195,-0.0087,xG proxy
+h_matches_14d,0.019,-0.0005,Fatigue / schedule
+h_ga_10,-0.0186,-0.0037,Recent form (3/5/10 matches)
+missingindicator_d_sv_top11_rel,0.0186,0.009,Squad market value
+missingindicator_d_sv_total_rel,0.0186,0.009,Squad market value
+a_ga_venue_5,0.017,0.0083,Venue form (home/away)
+d_ga_venue_5,-0.016,-0.0003,Venue form (home/away)
+d_gf_10,-0.0151,0.0085,Recent form (3/5/10 matches)
+d_sot_3,0.0141,0.0045,Shots (on target / against)
+d_xg_3,0.0141,0.0045,xG proxy
+d_ga_5,0.014,0.0128,Recent form (3/5/10 matches)
+h_gd_5,-0.0137,0.0094,Recent form (3/5/10 matches)
+h_ga_3,-0.0133,0.0314,Recent form (3/5/10 matches)
+a_ga_5,0.0126,-0.0309,Recent form (3/5/10 matches)
+a_rest_days,-0.0123,0.0003,Fatigue / schedule
+h_sot_against_5,0.0115,-0.001,Shots (on target / against)
+h_xga_5,0.0115,-0.001,xG proxy
+h_sot_3,0.0114,0.0052,Shots (on target / against)
+h_xg_3,0.0114,0.0052,xG proxy
+a_pts_5,-0.0103,0.0035,Recent form (3/5/10 matches)
+d_rest_days,0.0096,-0.0009,Fatigue / schedule
+d_xg_5,0.0094,0.0035,xG proxy
+d_sot_5,0.0094,0.0035,Shots (on target / against)
+h_gf_3,0.0091,-0.015,Recent form (3/5/10 matches)
+d_ga_3,-0.0087,0.0154,Recent form (3/5/10 matches)
+h_gf_5,0.0085,0.0023,Recent form (3/5/10 matches)
+h_rest_days,-0.0082,-0.0001,Fatigue / schedule
+d_gd_5,-0.0073,-0.0058,Recent form (3/5/10 matches)
+a_sot_3,-0.0072,-0.0007,Shots (on target / against)
+a_xg_3,-0.0072,-0.0007,xG proxy
+a_sot_against_5,0.0066,0.0037,Shots (on target / against)
+a_xga_5,0.0066,0.0037,xG proxy
+a_games_played_season,0.0064,-0.0104,History depth
+a_gf_5,0.0061,-0.0016,Recent form (3/5/10 matches)
+d_ga_10,0.0059,-0.0035,Recent form (3/5/10 matches)
+h_pts_5,-0.0057,0.0039,Recent form (3/5/10 matches)
+d_gf_3,0.0057,-0.0105,Recent form (3/5/10 matches)
+h_ga_venue_5,-0.0044,0.0092,Venue form (home/away)
+h_xg_10,-0.0042,-0.0044,xG proxy
+h_sot_10,-0.0042,-0.0044,Shots (on target / against)
+d_sot_against_5,0.0041,-0.0038,Shots (on target / against)
+d_xga_5,0.0041,-0.0038,xG proxy
+h_pts_3,-0.004,0.0191,Recent form (3/5/10 matches)
+a_gd_5,-0.0035,0.0175,Recent form (3/5/10 matches)
+d_pts_5,0.0033,0.0003,Recent form (3/5/10 matches)
+a_sot_against_3,0.0028,-0.0009,Shots (on target / against)
+a_xga_3,0.0028,-0.0009,xG proxy
+a_ppg_season,-0.0026,-0.0021,League table
+h_games_played_season,0.0023,-0.0162,History depth
+d_gf_5,0.0016,0.0027,Recent form (3/5/10 matches)
+a_ga_3,-0.0015,0.0107,Recent form (3/5/10 matches)
+a_gf_3,0.001,-0.0,Recent form (3/5/10 matches)
+h_gf_10,-0.0007,-0.0018,Recent form (3/5/10 matches)
+missingindicator_a_sv_total_rel,-0.0002,0.0015,Squad market value
+missingindicator_a_sv_top11_rel,-0.0002,0.0015,Squad market value

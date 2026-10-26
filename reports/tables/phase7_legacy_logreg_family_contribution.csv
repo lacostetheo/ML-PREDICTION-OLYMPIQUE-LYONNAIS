@@ -1,0 +1,10 @@
+,mean_abs_contribution,sd_contribution
+Elo rating,0.456,0.5616
+Squad market value,0.357,0.4425
+Recent form (3/5/10 matches),0.1378,0.1712
+Shots (on target / against),0.1325,0.1681
+xG proxy,0.1325,0.1681
+History depth,0.1191,0.0715
+Fatigue / schedule,0.0709,0.0871
+League table,0.0492,0.0731
+Venue form (home/away),0.0469,0.0604

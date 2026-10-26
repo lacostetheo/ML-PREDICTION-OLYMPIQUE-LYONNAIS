@@ -24,7 +24,7 @@ from olpred.run_baselines import all_model_cols
 
 PROCESSED = Path("data/processed")
 TABLES = Path("reports/tables")
-LR_GRID = [0.003, 0.01, 0.03, 0.1, 0.3]
+LR_GRID = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03]
 
 
 def choose_lr(feats: pd.DataFrame, cols: list[str]) -> pd.DataFrame:

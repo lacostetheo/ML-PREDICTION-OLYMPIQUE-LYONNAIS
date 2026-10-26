@@ -23,7 +23,8 @@ def _load():
     return probs, idx["y"].to_numpy(), dates
 
 
-def logloss_figure(probs, y, dates) -> Path:
+def logloss_figure(probs, y, dates, title="More information helps, but the bookmaker is still ahead",
+                   filename="phase4_logloss.png") -> Path:
     blocks = week_blocks(dates)
     rows = []
     for name, p in probs.items():
@@ -32,7 +33,7 @@ def logloss_figure(probs, y, dates) -> Path:
         rows.append((name, ci["diff"], ci["ci_low"], ci["ci_high"]))
     d = pd.DataFrame(rows, columns=["model", "ll", "lo", "hi"]).sort_values("ll", ascending=False)
 
-    fig, ax = plt.subplots(figsize=(8, 4.2))
+    fig, ax = plt.subplots(figsize=(8, 0.55 * len(d) + 1.6))
     for i, r in enumerate(d.itertuples()):
         color = (style.AQUA if r.model.startswith("Bookmaker")
                  else style.NEUTRAL if r.model.startswith("Class") else style.BLUE)
@@ -41,7 +42,7 @@ def logloss_figure(probs, y, dates) -> Path:
         ax.text(r.hi + 0.002, i, f"{r.ll:.4f}", va="center", color=style.INK_2, fontsize=9)
     ax.set_yticks(range(len(d)), d["model"])
     ax.set_xlabel("Log loss on validation seasons 2021–22 (lower is better); bars = 95 % CI")
-    ax.set_title("More information helps, but the bookmaker is still ahead")
+    ax.set_title(title)
     ax.grid(axis="y", visible=False)
     ax.set_xlim(d["lo"].min() - 0.01, d["hi"].max() + 0.012)
     # legend: colour = kind of model
@@ -49,7 +50,7 @@ def logloss_figure(probs, y, dates) -> Path:
     ax.legend(handles=[Line2D([], [], marker="o", color=c, lw=2, ms=7, label=l) for c, l in
                        [(style.NEUTRAL, "Naive"), (style.BLUE, "Our models"),
                         (style.AQUA, "Bookmaker (reference)")]], loc="upper right")
-    out = FIGURES / "phase4_logloss.png"
+    out = FIGURES / filename
     fig.tight_layout(); fig.savefig(out); plt.close(fig)
     return out
 

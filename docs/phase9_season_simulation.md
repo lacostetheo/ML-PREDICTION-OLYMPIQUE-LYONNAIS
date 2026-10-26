@@ -89,7 +89,7 @@ other European places = top 6, direct relegation = bottom 2.)
 
 OL's most likely finishes are 2nd and 3rd (15–16 % each) but the distribution is wide:
 80 % of simulations give between 49 and 66 points, and 4th–6th place is almost as likely
-as the top three. Seven matches in, the table is nearly flat at the top (five teams on
+as the top three. Seven matches in, the table is nearly flat at the top (six teams on
 13–14 points), so most of the information comes from team strength, not from the table.
 
 ## Limitations

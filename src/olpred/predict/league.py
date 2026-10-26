@@ -11,7 +11,9 @@ from olpred.models.baselines import PoissonGoalModel
 from olpred.predict.simulate import LinearSim, SeasonInput, conditional_score_cdfs, remaining_pairs
 from olpred.predict.state import fixture_frame
 
-LEAGUES = {k: v for k, v in json.loads((Path(__file__).resolve().parents[3] / "configs" / "leagues.json").read_text()).items() if not k.startswith("_")}
+ROOT = Path(__file__).resolve().parents[3]
+LEAGUES = {k: v for k, v in json.loads((ROOT / "configs" / "leagues.json").read_text()).items()
+           if not k.startswith("_")}
 POISSON_COLS = (["h_gf_10", "a_ga_10", "elo_diff"], ["a_gf_10", "h_ga_10", "elo_diff"])
 
 
@@ -59,5 +61,5 @@ def choose_sigma(sel: pd.DataFrame) -> float:
     return float(crit.idxmin())
 
 
-def selected_sigma(tables: Path = Path("reports/tables")) -> float:
+def selected_sigma(tables: Path = ROOT / "reports" / "tables") -> float:
     return choose_sigma(pd.read_csv(tables / "backtest_sigma_selection.csv", index_col=0))

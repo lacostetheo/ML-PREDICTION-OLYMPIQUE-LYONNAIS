@@ -9,3 +9,6 @@ data/processed/*
 !data/*/.gitkeep
 .DS_Store
 models_store/
+
+# per-match predictions contain teams/dates/results from football-data (private-use terms): regenerate with `make final`
+reports/tables/final_test_predictions.parquet

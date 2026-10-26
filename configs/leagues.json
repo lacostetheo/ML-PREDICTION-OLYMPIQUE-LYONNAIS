@@ -1,0 +1,8 @@
+{
+  "_note": "Assumptions, not verified facts: slots follow the usual UEFA allocation of recent seasons and may change. 'relegation' = direct relegation places (a play-off place is not counted).",
+  "E0":  {"name": "Premier League", "champions_league": 4, "europe": 7, "relegation": 3},
+  "SP1": {"name": "La Liga",        "champions_league": 4, "europe": 7, "relegation": 3},
+  "I1":  {"name": "Serie A",        "champions_league": 4, "europe": 7, "relegation": 3},
+  "D1":  {"name": "Bundesliga",     "champions_league": 4, "europe": 7, "relegation": 2},
+  "F1":  {"name": "Ligue 1",        "champions_league": 3, "europe": 6, "relegation": 2}
+}

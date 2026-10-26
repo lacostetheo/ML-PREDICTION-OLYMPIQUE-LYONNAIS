@@ -10,6 +10,7 @@ import pandas as pd
 
 from olpred.data import transfermarkt as tm
 from olpred.data.clean import build_matches
+from olpred.data.football_data import download as download_matches
 from olpred.data.football_data import load_raw
 from olpred.features.elo import compute_elo
 from olpred.features.form import ROLL_STATS, VENUE_STATS, VENUE_WINDOW, WINDOWS, add_form, add_table, \
@@ -69,17 +70,28 @@ def build_features(matches: pd.DataFrame, squad: pd.DataFrame | None = None,
     return out.sort_values(["date", "match_id"]).reset_index(drop=True)
 
 
+def squad_resources(matches: pd.DataFrame, end: str | None = None):
+    """Club mapping and monthly squad-value snapshots (computed once, reused for any
+    ``as_of`` date up to ``end``)."""
+    tm.download()
+    club_map = build_club_map(matches, tm.load("games"))
+    snaps = monthly_snapshots(tm.load("player_valuations"), set(club_map["club_id"]),
+                              start=f"{matches['season'].min() - 1}-07-01",
+                              end=end or matches["date"].max().strftime("%Y-%m-01"))
+    return club_map, snaps
+
+
 def main() -> None:
     PROCESSED.mkdir(parents=True, exist_ok=True)
+    try:  # refresh the current season; fall back to the cache when offline
+        download_matches()
+    except Exception as exc:  # noqa: BLE001
+        print(f"offline, using cached match files ({exc})")
     matches = build_matches(load_raw())
     matches.to_parquet(PROCESSED / "matches.parquet")
 
-    tm.download()
-    club_map = build_club_map(matches, tm.load("games"))
+    club_map, snaps = squad_resources(matches)
     club_map.to_csv(PROCESSED / "club_map.csv", index=False)
-    snaps = monthly_snapshots(tm.load("player_valuations"), set(club_map["club_id"]),
-                              start=f"{matches['season'].min() - 1}-07-01",
-                              end=matches["date"].max().strftime("%Y-%m-01"))
     squad = squad_features(matches, club_map, snaps)
 
     features = build_features(matches, squad)

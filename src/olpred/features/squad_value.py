@@ -75,3 +75,29 @@ def squad_features(matches: pd.DataFrame, club_map: pd.DataFrame, snaps: pd.Data
     thin = tm["sv_n"] < MIN_VALUED_PLAYERS  # too few valued players = unreliable total
     tm.loc[thin, ["sv_total_rel", "sv_top11_rel"]] = np.nan
     return tm[["league", "team", "month", "sv_total_rel", "sv_top11_rel", "sv_n"]]
+
+
+POSITIONS = ["Goalkeeper", "Defender", "Midfield", "Attack"]
+
+
+def position_profile(valuations: pd.DataFrame, players: pd.DataFrame, club_ids: set[int],
+                     as_of: pd.Timestamp) -> pd.DataFrame:
+    """Descriptive squad-value profile per club on ``as_of`` (same snapshot logic as the
+    model features: latest valuation of each player in the 12 months before the first day
+    of the month): value by position group, total, and 'depth' = value of the players
+    ranked 12th to 22nd in the squad. Not used as a model input."""
+    g = as_of.replace(day=1)
+    v = valuations[valuations["current_club_id"].isin(club_ids)].copy()
+    v["date"] = pd.to_datetime(v["date"])
+    v = v[(v["date"] < g) & (v["date"] >= g - pd.Timedelta(days=WINDOW_DAYS))].dropna(
+        subset=["market_value_in_eur"]).sort_values("date")
+    v = v.groupby("player_id").tail(1).merge(players[["player_id", "position"]], on="player_id", how="left")
+    rows = {}
+    for club, d in v.groupby("current_club_id"):
+        d = d.sort_values("market_value_in_eur", ascending=False)
+        r = {p: d.loc[d["position"] == p, "market_value_in_eur"].sum() for p in POSITIONS}
+        r["Total"] = d["market_value_in_eur"].sum()
+        r["Depth (players 12-22)"] = d["market_value_in_eur"].iloc[11:22].sum()
+        r["Valued players"] = len(d)
+        rows[club] = r
+    return pd.DataFrame(rows).T.rename_axis("club_id")

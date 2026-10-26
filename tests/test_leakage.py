@@ -126,3 +126,26 @@ def test_squad_value_ignores_valuations_on_or_after_snapshot():
     matches = pd.DataFrame({"league": ["XX"], "home": ["T0"], "away": ["T0"],
                             "date": [pd.Timestamp("2015-06-20")]})
     assert squad_features(matches, club_map, thin)["sv_total_rel"].isna().all()
+
+
+def test_future_fixture_features_equal_training_features():
+    """The phantom-match 'team state' must reproduce, for any past date, exactly the
+    features the training table holds for the matches played that day."""
+    from pathlib import Path
+
+    if not (Path("data/processed/features.parquet").exists() and Path("data/raw/transfermarkt").exists()):
+        pytest.skip("processed data not available")
+    from olpred.features.build import squad_resources
+    from olpred.features.columns import curated_cols
+    from olpred.predict.state import fixture_frame, team_state
+
+    f = pd.read_parquet("data/processed/features.parquet")
+    m = pd.read_parquet("data/processed/matches.parquet")
+    club_map, snaps = squad_resources(m, end=(f["date"].max() + pd.offsets.MonthBegin(1)).strftime("%Y-%m-01"))
+    as_of = pd.Timestamp("2025-11-08")
+    day = f[f["date"] == as_of].reset_index(drop=True)
+    assert len(day) > 5
+    ours = fixture_frame(day[["league", "home", "away"]], team_state(m, as_of, club_map, snaps))
+    cols = [c for c in curated_cols(f) if "rest_days" not in c]  # rest days differ only by schedule rounding
+    pd.testing.assert_frame_equal(ours[cols].astype(float), day[cols].astype(float), check_exact=False,
+                                  rtol=1e-9, atol=1e-9)

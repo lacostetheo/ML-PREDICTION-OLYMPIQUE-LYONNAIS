@@ -1,0 +1,5 @@
+,mae_points,rmse_points,mae_points_ppg_baseline,coverage_80,brier_title,brier_title_climatology,brier_top4,brier_top4_climatology,brier_top6,brier_top6_climatology,brier_europe,brier_europe_climatology,brier_relegation,brier_relegation_climatology,brier_champions_league,brier_champions_league_climatology
+2023,6.2267,7.9118,8.8165,0.75,0.0228,0.0494,0.0588,0.1648,0.0839,0.2146,0.0837,0.2284,0.0503,0.1167,0.0541,0.1584
+2024,6.5848,8.1687,8.2122,0.7083,0.0244,0.0494,0.0546,0.1648,0.0916,0.2146,0.0943,0.2284,0.0615,0.1167,0.0489,0.1584
+2025,6.2644,7.6745,9.6845,0.7083,0.0185,0.0494,0.0777,0.1648,0.0921,0.2146,0.1176,0.2284,0.0519,0.1167,0.0728,0.1584
+all test seasons,6.3586,7.9209,8.9044,0.7222,0.0219,0.0494,0.0637,0.1648,0.0892,0.2146,0.0985,0.2284,0.0546,0.1167,0.0586,0.1584

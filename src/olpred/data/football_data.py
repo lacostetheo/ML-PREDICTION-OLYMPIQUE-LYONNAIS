@@ -56,10 +56,30 @@ def download(
     return paths
 
 
+FIXTURES_URL = "https://football-data.co.uk/fixtures.csv"
+
+
+def download_fixtures(raw_dir: Path = RAW_DIR) -> Path:
+    """Upcoming fixtures (next round only, with bookmaker odds), overwritten each call."""
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    resp = requests.get(FIXTURES_URL, timeout=30)
+    resp.raise_for_status()
+    path = raw_dir / "fixtures.csv"
+    path.write_bytes(resp.content)
+    return path
+
+
+def load_fixtures(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
+    df = pd.read_csv(raw_dir / "fixtures.csv", encoding="utf-8-sig")
+    df = df.dropna(subset=["HomeTeam", "AwayTeam"]).copy()
+    df["date"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed")
+    return df.rename(columns={"Div": "league", "HomeTeam": "home", "AwayTeam": "away"})
+
+
 def load_raw(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
     """Concatenate all cached CSVs into one frame with season/league columns."""
     frames = []
-    for path in sorted(raw_dir.glob("*.csv")):
+    for path in sorted(raw_dir.glob("[0-9]*_*.csv")):
         code, league = path.stem.split("_")
         df = pd.read_csv(path, encoding="latin-1", on_bad_lines="skip")
         df = df.dropna(subset=["HomeTeam", "AwayTeam"]).copy()

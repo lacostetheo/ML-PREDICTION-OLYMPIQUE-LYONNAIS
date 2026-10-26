@@ -48,7 +48,15 @@ Raw data is **never committed** (see `.gitignore`); it is downloaded into
   - Club names differ from football-data → mapping table required.
   - The data was originally scraped from Transfermarkt, whose own terms were not reviewed; the CC0 label comes from the dataset author. Data stays local and uncommitted.
 
-## 5. Excluded
+## 5. Ligue 1 calendar — Maxifoot (display only) ⚠️
+
+- URL: https://www.maxifoot.fr/calendrier-ligue1.htm (page read once; cached in `data/raw/calendar/`, not committed)
+- Used **only** to show a Ligue 1 team's 2nd and 3rd upcoming matches on the website (opponent and date); it is **not** a model input.
+- `robots.txt` does not disallow this page; the site's terms of use were not reviewed. The parser is validated: 34 matchdays of exactly 18 distinct clubs, and the 63 results it lists for matches already in our data agree with football-data (0 mismatches). OL's next fixtures were cross-checked against Lyon Capitale's full OL calendar.
+- Dates are those published on 25 Oct 2026 and can change. Other leagues' calendars were **not** collected.
+- It also lists 8 results of 23–25 Oct 2026 that football-data had not yet published: our team state does not include them.
+
+## 6. Excluded
 
 - **FBref advanced stats**: provider removed Opta data in January 2026; only basic historical data remains.
 - **Injuries/suspensions history, wages**: no clean, free, complete source identified.

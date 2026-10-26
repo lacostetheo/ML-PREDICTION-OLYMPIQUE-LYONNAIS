@@ -2,7 +2,7 @@
 PY ?= python
 export PYTHONPATH := src
 
-.PHONY: all install data features baselines ml nn interpret final ablation backtest ol simulate figures pipeline dashboard test clean
+.PHONY: site all install data features baselines ml nn interpret final ablation backtest ol simulate figures pipeline dashboard test clean
 
 all: features baselines ml nn interpret final ablation backtest ol simulate figures
 
@@ -44,6 +44,9 @@ figures:
 
 # Minimal pipeline needed by the dashboard (skips the model comparison)
 pipeline: features backtest ol simulate
+
+site:                    ## export data for the website and build a single-file version
+	$(PY) -m olpred.export_site && $(PY) -m olpred.build_standalone
 
 dashboard:
 	streamlit run app/streamlit_app.py

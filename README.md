@@ -1,32 +1,39 @@
-# OL·LAB — Can machine learning predict Olympique Lyonnais?
+# OL·LAB: predicting Olympique Lyonnais with machine learning
 
-*A leakage-free, walk-forward study of football match probabilities, season simulation and market efficiency in the five major European leagues, with Olympique Lyonnais (OL) as the case study.*
+Can a model predict football results better than Elo ratings or the bookmakers? This project tests it on the five major European leagues, with Olympique Lyonnais (OL) as the case study.
 
-**🌐 [Open the website](https://raw.githack.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/main/site/ol-lab-standalone.html)** · **📄 [Read the paper (PDF)](reports/OL_ML_project.pdf)** · [Reproduce it](#reproducibility)
+**[Open the website](https://raw.githack.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/main/site/ol-lab-standalone.html)**
 
-[![tests](https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/actions/workflows/tests.yml/badge.svg)](.github/workflows/tests.yml)
-![python](https://img.shields.io/badge/python-3.12-blue) ![license](https://img.shields.io/badge/license-MIT-green)
+**[Read the paper (PDF)](reports/OL_ML_project.pdf)**
 
 ![The model's picks](reports/figures/site_picks.png)
 
-## In 30 seconds
+## In short
 
-| | |
+**Model.** Multinomial logistic regression on 100 inputs (Elo, squad market value, recent form, shots, schedule), refitted every season.
+
+**Alternatives tested.** Gradient boosting, random forest, SVM, neural networks. None beats the logistic regression significantly, so the simplest model is kept.
+
+**Result.** Team strength (Elo and squad value) explains almost everything that can be predicted. The probabilities are well calibrated, but the bookmaker is still better (log loss 0.966 against 0.979), and adding our model to its prices adds nothing.
+
+**For OL (Ligue 1 2026/27, state on 27 October 2026).**
+
+- 54.6 expected points (80% interval 46 to 63)
+- average final position: 5.9
+- 23% chance of a Champions League place, 1% chance of the title
+- 4% chance of winning the Europa League
+- next match, Lyon - Angers: 68% win, 20% draw, 12% defeat
+
+## Where to look
+
+| What | Where |
 |---|---|
-| **Question** | Do ML models give better football-match probabilities than Elo ratings or the betting market? What do they say about OL? |
-| **Chosen model** | **Multinomial logistic regression** on 100 inputs (Elo, squad market value, recent form, shots, schedule), re-fitted every season. Boosting, random forest, SVM and neural networks were tested: **none beats it significantly**, so the simplest one is kept. |
-| **Answer** | Team strength (Elo, squad value) explains almost everything that is predictable. The probabilities are **well calibrated**, but the **bookmaker is better** (log loss 0.966 vs 0.979) and adding our models to its prices adds **nothing**. |
-| **For OL** | Ligue 1 2026/27: **54.6 expected points** (80 % interval 46–63), average final position 5.9, **23 % chance of a Champions League place**, 1 % of the title; 4 % to win the Europa League. Next: Lyon – Angers 68 % / 20 % / 12 % (win / draw / loss). |
-| **Rigour** | Features built only from the past (an automated test proves it), temporal validation, confidence intervals on every comparison, uncertainty on every forecast, negative results reported as such. |
-
-## Try it
-
-| | How |
-|---|---|
-| 🌐 **Interactive site** (no install) | [open the site](https://raw.githack.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/main/site/ol-lab-standalone.html), or download **`site/ol-lab-standalone.html`** (one file: fonts and data included) and double-click it. Refreshed every Monday — see [Website](#website). |
-| 📊 **Streamlit dashboard** | `make dashboard` |
-| 📄 **Research-paper style report (13 pages)** | [`reports/OL_ML_project.pdf`](reports/OL_ML_project.pdf): the paper as written **before Paris SG – Lyon** (data through 21 Oct, snapshot 26 Oct, so its forecast for that match is a genuine pre-match forecast). The same paper rebuilt with the latest data (`make report`, needs LaTeX): [`reports/OL_ML_project_updated.pdf`](reports/OL_ML_project_updated.pdf). Earlier long version: [`reports/final_report.pdf`](reports/final_report.pdf) |
-| 📓 **Notebooks** | [`notebooks/`](notebooks/) (executed, 01 → 08) |
+| Website, no install | [open it](https://raw.githack.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/main/site/ol-lab-standalone.html), or download `site/ol-lab-standalone.html` and double-click it |
+| Paper, 13 pages | [`reports/OL_ML_project.pdf`](reports/OL_ML_project.pdf), written before Paris SG - Lyon, so its forecast for that match is a real pre-match forecast |
+| Paper rebuilt with the latest data | [`reports/OL_ML_project_updated.pdf`](reports/OL_ML_project_updated.pdf) |
+| Dashboard | `make dashboard` |
+| Notebooks | [`notebooks/`](notebooks/), 01 to 08 |
+| Details of each phase | [`docs/`](docs/) |
 
 ## How it works
 
@@ -39,104 +46,143 @@ flowchart LR
   C -. compared with .-> F["Bookmaker · Elo · boosting<br/>neural network"]
 ```
 
-**Glossary.** *Elo*: a strength score updated after every match. *Log loss*: penalises confident wrong forecasts (lower is better; 1.075 = ignoring team quality, 0.966 = bookmaker). *Calibration*: a "70 %" forecast should come true ~70 % of the time. *Walk-forward*: train on the past, predict the next season, repeat. *Leakage*: using information from after the match. *Monte Carlo*: replay the season thousands of times with the model's probabilities.
+**Glossary**
 
-## Results (test seasons 2023 → 2026, 5,650 matches)
+- **Elo**: a strength score updated after every match.
+- **Log loss**: punishes confident wrong forecasts. Lower is better. 1.075 means ignoring team quality, 0.966 is the bookmaker.
+- **Calibration**: a "70%" forecast should come true about 70% of the time.
+- **Walk-forward**: train on the past, predict the next season, repeat.
+- **Leakage**: using information from after the match.
+- **Monte Carlo**: replay the season thousands of times with the model's probabilities.
 
-| Model | Accuracy | **Log loss** [95 % CI] | Brier | Calibration error |
+## Results
+
+Test seasons 2023 to 2026, 5,650 matches.
+
+| Model | Accuracy | Log loss [95% CI] | Brier | Calibration error |
 |---|---|---|---|---|
-| Baseline (class frequencies) | 43.2 % | 1.0754 [1.069, 1.082] | 0.651 | 0.012 |
-| Elo | 52.5 % | 0.9892 [0.979, 0.999] | 0.590 | 0.017 |
-| Poisson goals | 52.0 % | 0.9907 [0.980, 1.001] | 0.591 | 0.022 |
-| **Logistic regression (chosen)** | 53.2 % | **0.9794** [0.969, 0.990] | 0.584 | 0.017 |
-| Gradient boosting | 52.9 % | 0.9787 [0.968, 0.989] | 0.583 | 0.020 |
-| Neural network (MLP) | 52.9 % | 0.9799 [0.970, 0.990] | 0.584 | 0.021 |
-| Ensemble of the three | 53.0 % | 0.9781 [0.968, 0.988] | 0.583 | 0.017 |
-| *Bookmaker (Bet365)* | *53.9 %* | *0.9659* [0.956, 0.976] | *0.574* | *0.022* |
+| Baseline (class frequencies) | 43.2% | 1.0754 [1.069, 1.082] | 0.651 | 0.012 |
+| Elo | 52.5% | 0.9892 [0.979, 0.999] | 0.590 | 0.017 |
+| Poisson goals | 52.0% | 0.9907 [0.980, 1.001] | 0.591 | 0.022 |
+| **Logistic regression (chosen)** | 53.2% | **0.9794** [0.969, 0.990] | 0.584 | 0.017 |
+| Gradient boosting | 52.9% | 0.9787 [0.968, 0.989] | 0.583 | 0.020 |
+| Neural network (MLP) | 52.9% | 0.9799 [0.970, 0.990] | 0.584 | 0.021 |
+| Ensemble of the three | 53.0% | 0.9781 [0.968, 0.988] | 0.583 | 0.017 |
+| *Bookmaker (Bet365)* | *53.9%* | *0.9659* [0.956, 0.976] | *0.574* | *0.022* |
 
 ![Log loss of the forecasters on the test seasons](reports/figures/final_logloss.png)
 
-- **Logistic regression beats Elo** (−0.0098, CI [−0.0137, −0.0060]); **boosting and the neural network do not beat it** (−0.0007 and +0.0005, CIs contain 0); **the bookmaker beats everyone** (+0.0136, CI [+0.0093, +0.0178]).
-- **Draws are essentially unpredictable** (the draw is the most likely outcome in 6 of 5,650 matches), so accuracy is a weak summary; probabilistic scores are the right yardstick.
-- **What explains results?** Elo and squad market value dominate; recent form and shots add a little; rest, league position and venue form add nothing ([interpretation](docs/phase7_interpretability.md)).
-- **Does updating the weights as results arrive help?** No measurable gain: the adaptivity already lives in the Elo and form features.
-- **Models vs market (finance extension).** Pooling model and market probabilities, the optimal weight on our model is **0.00**: the market already contains everything the models know (average margin 5.5 %). Purely an efficiency test — no betting strategy is built.
-- **Ablation.** Elo alone 0.9957 → + form 0.9931 → + shots 0.9887 → + table/fatigue 0.9890 (no gain) → + squad value 0.9870.
+- The logistic regression beats Elo (-0.0098, CI [-0.0137, -0.0060]).
+- Boosting and the neural network do not beat it (-0.0007 and +0.0005, the intervals contain 0).
+- The bookmaker beats everyone (+0.0136, CI [+0.0093, +0.0178]).
+- Draws are almost impossible to predict: the draw is the most likely outcome in only 6 of 5,650 matches. Accuracy is therefore a weak summary, and log loss is the better yardstick.
+- What explains results: Elo and squad value dominate. Recent form and shots add a little. Rest, league position and venue form add nothing ([details](docs/phase7_interpretability.md)).
+- Updating the weights as results arrive brings no measurable gain.
+- Pooling our probabilities with the market's, the best weight on our model is 0.00. The market already contains what the model knows. This is an efficiency test only, no betting strategy is built.
+- Ablation: Elo alone 0.9957, plus form 0.9931, plus shots 0.9887, plus table and fatigue 0.9890 (no gain), plus squad value 0.9870.
 
 Full discussion: [`docs/final_evaluation.md`](docs/final_evaluation.md).
 
-## OL predictions and season simulation (state: 27 October 2026)
+## OL and the season simulation
 
-OL is **6th in Ligue 1 by Elo** after a 0–2 defeat at Paris SG on 26 October (the model's pick, at 63 %), 5th by squad value (defence 10th) and 10th for recent form. Forecasts carry two kinds of uncertainty: model (100 bootstrap refits) and team strength (Elo ±60 points). The Monte Carlo simulator was **backtested** on 2023–2025: error on final points **6.4 vs 8.9** for the naive reference, calibrated probabilities — but its "80 %" intervals covered only 72 %, so read them as lower bounds.
+OL is 6th in Ligue 1 by Elo after the 0-2 defeat at Paris SG on 26 October (the model had picked Paris at 63%). It is 5th by squad value and 10th for recent form.
 
-![OL position](reports/figures/sim_ol_position.png)
+Each forecast carries two uncertainties: the model (100 bootstrap refits) and team strength (Elo, plus or minus 60 points).
 
-| Ligue 1 2026/27 | Expected points [80 %] | Title | Champions League (top 3) | Top 6 | Relegation |
+The simulator was backtested on 2023 to 2025. The error on final points is 6.4, against 8.9 for the naive reference. Its "80%" intervals only covered 72% of cases, so read them as lower bounds.
+
+![OL final position](reports/figures/sim_ol_position.png)
+
+| Ligue 1 2026/27 | Expected points [80%] | Title | Champions League (top 3) | Top 6 | Relegation |
 |---|---|---|---|---|---|
-| Paris SG | 73.0 [65–81] | 83.8 % | 97.8 % | 99.9 % | 0 % |
-| Monaco | 60.5 [52–69] | 6.6 % | 55.0 % | 87.3 % | 0 % |
-| **Lyon** | **54.6 [46–63]** | **1.4 %** | **22.8 %** | **60.9 %** | **< 0.1 %** |
+| Paris SG | 73.0 [65-81] | 83.8% | 97.8% | 99.9% | 0% |
+| Monaco | 60.5 [52-69] | 6.6% | 55.0% | 87.3% | 0% |
+| **Lyon** | **54.6 [46-63]** | **1.4%** | **22.8%** | **60.9%** | **< 0.1%** |
 
-European slots are assumptions (`configs/leagues.json`). OL also plays the **Europa League** this season (4 % to win it, see [`docs/europe_ucl.md`](docs/europe_ucl.md)). The phase reports below describe the state when each phase was run (up to 26 October 2026): [`docs/phase8_ol_predictions.md`](docs/phase8_ol_predictions.md), [`docs/phase9_season_simulation.md`](docs/phase9_season_simulation.md).
+European places are assumptions (`configs/leagues.json`). OL also plays the Europa League this season, see [`docs/europe_ucl.md`](docs/europe_ucl.md).
+
+Reports: [`docs/phase8_ol_predictions.md`](docs/phase8_ol_predictions.md) and [`docs/phase9_season_simulation.md`](docs/phase9_season_simulation.md).
 
 ## Website
 
 ![Match predictions](reports/figures/site_matches.png)
 
-A static site (HTML + JavaScript, no server; `site/ol-lab-standalone.html` is the same site in one file, with fonts and data embedded) in an editorial style: paper background, serif headlines, one accent colour reserved for Lyon. Six pages:
+Six pages:
 
-1. **Picks** — the model's pick in each of the seven competitions (five leagues, Champions League, Europa League) with its probability and the clubs just behind, then Lyon: next three matches, where it is expected to finish, and the record of the last seven days. Rows are labelled "clear favourite", "open race" or "no clear favourite" so that a 14 % pick is not read as a certainty.
-2. **Matches** — predictions for **every match still to play** in the seven competitions, by round or by team; click a league match to see how Elo, squad value, form… add up to the forecast (exact for a logistic regression).
-3. **Standings** — projected final tables (expected points with their 80 % range, title / Champions League / Europe / relegation odds) and projected league phases of the two cups.
-4. **Team** — any club of the five leagues: key numbers, next matches, distribution of its final position, Elo since 2016 against the league.
-5. **Results** — every recent match with the probabilities given before kick-off and what happened, accuracy and log loss against the bookmaker, a calibration table. These are walk-forward forecasts recomputed after the fact, not forecasts published in advance.
-6. **Method** — the chosen model and its equation, the comparison with the other forecasters, limits.
+1. **Picks**: the model's pick in each competition (five leagues, Champions League, Europa League), then Lyon's next matches and where it should finish.
+2. **Matches**: forecasts for every match still to play. Click a league match to see how Elo, squad value and form add up to the forecast.
+3. **Standings**: projected final tables with title, Europe and relegation odds.
+4. **Team**: any club of the five leagues, with its Elo since 2016.
+5. **Results**: the recent matches, the probabilities given before kick-off and what happened. These forecasts are recomputed after the fact, they were not published in advance.
+6. **Method**: the model, the comparison with other forecasters, the definition of Elo, the limits.
 
-*Calendars:* openfootball (CC0) for four leagues, Maxifoot for Ligue 1, Wikipedia for the European cups; dates can change, and a match still unplayed after its date is flagged "postponed". All numbers are precomputed by Python; the browser does no machine learning.
+**Weekly update.** Every Monday, `.github/workflows/weekly.yml` downloads the new results, refits the model, reruns the simulations and republishes the site. The update date is shown in the header and the footer. The paper is not regenerated.
 
-**Updating.** The workflow `.github/workflows/weekly.yml` runs every Monday (and on demand from the Actions tab): it downloads the new results and calendars, refits the model, resimulates the competitions, rebuilds `site/data.js` and republishes the site, which shows its last update date in the header and footer. The paper in `reports/` is never regenerated by it. It only runs once the file is on `main`, with Pages set to "GitHub Actions" and workflow permissions set to read and write. By hand: `make weekly` (about 40 minutes, needs internet).
+For this to run, GitHub Pages must be set to "GitHub Actions" (Settings, Pages) and the workflow permissions to "Read and write" (Settings, Actions, General). By hand: `make weekly` (about 40 minutes, needs internet).
 
-**Publishing:** merge to `main`, then *Settings → Pages → Source: GitHub Actions*; `.github/workflows/pages.yml` deploys `site/`.
+Calendars come from openfootball (four leagues), Maxifoot (Ligue 1) and Wikipedia (European cups). A match still unplayed after its date is flagged as postponed. The browser does no machine learning: every number is precomputed in Python.
 
-## Method, in brief
+## Method
 
-- **Data**: [football-data.co.uk](https://football-data.co.uk/data.php) results, shots and odds (private, non-commercial use; raw files are **not** redistributed), the CC0 [Transfermarkt dataset](https://github.com/dcaribou/transfermarkt-datasets) for squad values, calendars (openfootball, Maxifoot) and the European fixtures (Wikipedia) for display. Rejected: FBref advanced data (removed Jan 2026), Understat (`robots.txt` forbids it), ClubElo (unreachable). All terms, limits and biases: [`docs/data_sources.md`](docs/data_sources.md).
-- **No leakage**: rolling windows shifted by one match; Elo stored before its update; squad values dated before the snapshot; bookmaker odds never a feature. An **automated perturbation test** replaces every result from a cutoff onward by random values and requires earlier features to be bit-for-bit identical (it fails on two deliberately injected bugs); another test shows features of *future* fixtures equal the training features exactly. Details: [`docs/features.md`](docs/features.md).
-- **Two data lessons**: the "xG proxy" is just `0.287 × shots on target`; variables counting matches-seen-so-far are a calendar clock — removed from the final feature set.
-- **Validation**: train 2011–2020 → validation 2021–22 → test 2023–2026 used once, walk-forward by season. Primary metric log loss (a proper scoring rule); differences tested by a paired block bootstrap (calendar weeks).
-- **Models**: scikit-learn only (no Dropout/BatchNorm: replaced by L2, few epochs, seed averaging). LSTM/GRU deliberately not built.
+**Data.** Results, shots and odds from [football-data.co.uk](https://football-data.co.uk/data.php) (private, non-commercial use, raw files are not redistributed). Squad values from the CC0 [Transfermarkt dataset](https://github.com/dcaribou/transfermarkt-datasets). Rejected: FBref advanced data (removed in January 2026), Understat (`robots.txt` forbids it), ClubElo (unreachable). Terms and biases: [`docs/data_sources.md`](docs/data_sources.md).
+
+**No leakage.**
+
+- Rolling windows are shifted by one match.
+- Elo is stored before it is updated.
+- Squad values are dated before the snapshot.
+- Bookmaker odds are never a feature.
+- An automated test replaces every result after a cutoff with random values and checks that earlier features are identical. It fails on two deliberately injected bugs.
+
+Details: [`docs/features.md`](docs/features.md).
+
+**Two data lessons.** The "xG proxy" is only `0.287 x shots on target`. Variables that count matches seen so far act as a calendar clock, so they were removed.
+
+**Validation.** Train 2011-2020, validate 2021-22, test 2023-2026 (used once), walk-forward by season. Main metric: log loss. Differences are tested with a paired block bootstrap by calendar week.
+
+**Models.** scikit-learn only. No LSTM or GRU.
 
 ## Limitations
 
-No injuries, line-ups or coaching information (the likely source of the gap to the bookmaker); no real xG; squad values are a crowd-sourced snapshot (June 2026) with 13 unmatched clubs; Bet365 pre-match prices with simple margin removal; few validation windows; SVM under-tuned; simulation intervals too narrow; UEFA slots assumed; Wikipedia's Champions League page lagged (29 of the 54 matches played on 27 October were recorded; the others are simulated); football-data.co.uk limits use to private, non-commercial purposes.
+- No injuries, line-ups or coaching information. This is the likely source of the gap to the bookmaker.
+- No real xG.
+- Squad values are a crowd-sourced snapshot (June 2026), with 13 unmatched clubs.
+- Bookmaker prices are Bet365 pre-match, with a simple margin removal.
+- Few validation windows, SVM under-tuned, simulation intervals too narrow.
+- UEFA places are assumed.
+- Wikipedia's Champions League page lags: 29 of the 54 matches played on 27 October were recorded, the others are simulated.
 
-## Reproducibility
+## Reproduce
 
 ```bash
-git clone https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS && cd ML-PREDICTION-OLYMPIQUE-LYONNAIS
-git checkout claude/olympique-lyonnais-ml-prediction-guhzl2     # until merged to main
-pip install -r requirements.txt        # Python 3.12; or: conda env create -f environment.yml
-make pipeline     # data → features → simulator backtest → OL predictions → simulations (~25 min, needs internet)
-make site         # export site data + build site/ol-lab-standalone.html
-make weekly       # after each round: new results → refit → simulations → Europe → site (~40 min)
-make report       # the paper (needs LaTeX)
-make dashboard    # Streamlit app
-make all          # every experiment (~1 h)        make test   # 26 tests incl. the leakage test
+git clone https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS
+cd ML-PREDICTION-OLYMPIQUE-LYONNAIS
+pip install -r requirements.txt     # Python 3.12, or: conda env create -f environment.yml
+
+make pipeline    # data, features, backtest, OL predictions, simulations (~25 min, needs internet)
+make site        # export site data and build site/ol-lab-standalone.html
+make weekly      # after each round: new results, refit, simulations, Europe, site (~40 min)
+make report      # the paper (needs LaTeX)
+make dashboard   # Streamlit app
+make all         # every experiment (~1 h)
+make test        # 26 tests, including the leakage test
 ```
 
-Seeds are fixed and raw data are downloaded (not committed). Because the current season and fixture list refresh on each run, re-running later includes newer matches; committed tables correspond to the state of **27 October 2026** (results through 26 October). Per-phase reports are in [`docs/`](docs/), every number in `reports/tables/`.
+Seeds are fixed and raw data is downloaded, not committed. Re-running later includes newer matches: the committed tables correspond to 27 October 2026 (results through 26 October).
 
 ```
-├── site/                 # website (index.html, app.js, style.css, data.js, fonts/)
-├── app/streamlit_app.py  # dashboard
-├── src/olpred/           # data/ features/ models/ evaluation/ predict/ viz/ + run_*.py entry points
-├── notebooks/            # 01 exploration … 08 final evaluation (executed)
-├── docs/                 # data sources, features, one report per phase
-├── reports/              # OL_ML_project.pdf (paper), final_report.pdf/.md, tables/, figures/
-├── configs/leagues.json  # league slots (assumptions, flagged)
-└── tests/                # leakage, metrics, online learning, dashboard, site data
+site/                 website (index.html, app.js, style.css, data.js, fonts/)
+app/streamlit_app.py  dashboard
+src/olpred/           data, features, models, evaluation, predictions, charts
+notebooks/            01 exploration to 08 final evaluation
+docs/                 data sources, features, one report per phase
+reports/              paper (PDF), tables, figures
+configs/leagues.json  league places (assumptions)
+tests/                leakage, metrics, online learning, dashboard, site data
 ```
 
 ---
 
-*Author: Théo Lacoste — EDHEC Business School (BBA). Academic project; **not betting advice**. Code under the MIT licence; data subject to their own terms (see `docs/data_sources.md`).*
+Author: Théo Lacoste, EDHEC Business School (BBA). Academic project, not betting advice. Code under the MIT licence, data under its own terms (see `docs/data_sources.md`).
+
+I thank my machine learning courses and my internship as a data scientist, which helped me a lot on this project.

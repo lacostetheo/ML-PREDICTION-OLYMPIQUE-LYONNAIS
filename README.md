@@ -51,9 +51,35 @@ flowchart LR
 - **Elo**: a strength score updated after every match.
 - **Log loss**: punishes confident wrong forecasts. Lower is better. 1.075 means ignoring team quality, 0.966 is the bookmaker.
 - **Calibration**: a "70%" forecast should come true about 70% of the time.
-- **Walk-forward**: train on the past, predict the next season, repeat.
+- **Walk-forward**: train on the past, predict the next season, repeat (see [the split](#train-validation-and-test-split)).
 - **Leakage**: using information from after the match.
 - **Monte Carlo**: replay the season thousands of times with the model's probabilities.
+
+## Train, validation and test split
+
+Seasons are named by their start year: 2011 means 2011/12.
+
+| Period | Seasons | Dates | Matches | Used for |
+|---|---|---|---|---|
+| Warm-up | 2010/11 | Aug 2010 to May 2011 | 1,826 | Elo and rolling features only, never fitted |
+| **Train** | 2011/12 to 2020/21 | Aug 2011 to May 2021 | about 18,200 | fitting the models, tuning with time-ordered cross-validation |
+| **Validation** | 2021/22 and 2022/23 | Aug 2021 to May 2023 | 3,652 | comparing models and choosing the final features |
+| **Test** | 2023/24 to 2026/27 | Aug 2023 to 26 Oct 2026 | 5,650 | final score, used once, nothing tuned on it |
+
+The split is by time, never random: a model never sees a match that is later than the ones it predicts.
+
+The test is **walk-forward**. Each test season is predicted by a model refitted on all the seasons before it:
+
+| Season predicted | Model fitted on |
+|---|---|
+| 2023/24 | 2011/12 to 2022/23 |
+| 2024/25 | 2011/12 to 2023/24 |
+| 2025/26 | 2011/12 to 2024/25 |
+| 2026/27 (until 26 Oct 2026) | 2011/12 to 2025/26 |
+
+Hyper-parameters are frozen before the test. Elo and form features are updated after every match, the model weights once a year.
+
+The forecasts for the matches still to play use all the matches played so far.
 
 ## Results
 
@@ -138,7 +164,7 @@ Details: [`docs/features.md`](docs/features.md).
 
 **Two data lessons.** The "xG proxy" is only `0.287 x shots on target`. Variables that count matches seen so far act as a calendar clock, so they were removed.
 
-**Validation.** Train 2011-2020, validate 2021-22, test 2023-2026 (used once), walk-forward by season. Main metric: log loss. Differences are tested with a paired block bootstrap by calendar week.
+**Validation.** Train 2011/12 to 2020/21, validate 2021/22 to 2022/23, test 2023/24 to October 2026 (see [the split](#train-validation-and-test-split)). Main metric: log loss. Differences are tested with a paired block bootstrap by calendar week.
 
 **Models.** scikit-learn only. No LSTM or GRU.
 

@@ -5,7 +5,7 @@
 [![tests](https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/actions/workflows/tests.yml/badge.svg)](.github/workflows/tests.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
-![Match Lab](reports/figures/site_match_lab.png)
+![Dashboard](reports/figures/site_dashboard.png)
 
 ## In 30 seconds
 
@@ -80,12 +80,13 @@ European slots are assumptions (`configs/leagues.json`). Details: [`docs/phase8_
 
 ![Monte Carlo](reports/figures/site_monte_carlo.png)
 
-A static site (HTML + JavaScript, no server, no dependency) with four sections:
+A static site (HTML + JavaScript, no server, no dependency) in a dashboard layout, with five sections:
 
-1. **Match Lab** — pick a team: probabilities of its **next three matches**, a match simulator, and an animated decomposition showing how Elo, squad value, form… add up to the forecast (exact for a logistic regression).
-2. **Season Monte Carlo** — replay of simulated seasons building the distribution of the team's final position and points.
-3. **Model Arena** — animated race of seven forecasters over the 5,602 test matches.
-4. **The model** — what is running, why it was chosen, what neural networks would look like, glossary and limits.
+1. **Dashboard** (home) — projected **top 3 of each of the five leagues** after 10,000 simulated seasons, the title race, the most likely qualifiers for the **Champions League** and **Europa/Conference** places, and the next round with the model's favourite. *Champions League / Europa League winners are deliberately not predicted*: the model has no European-competition data (participants, draw, results, a strength scale shared between leagues), so a number would be invented — see the page for what is needed.
+2. **Match Lab** — pick a team: probabilities of its **next three matches**, a match simulator, and an animated decomposition showing how Elo, squad value, form… add up to the forecast (exact for a logistic regression).
+3. **Season Monte Carlo** — replay of simulated seasons building the distribution of the team's final position and points.
+4. **Model Arena** — animated race of seven forecasters over the 5,602 test matches.
+5. **The model** — what is running, why it was chosen, what neural networks would look like, glossary and limits.
 
 *About "next three matches":* the odds source lists only the **next round**. For **Ligue 1** the following matches come from the published calendar (dates can change); for the **other four leagues** matches 2–3 are not collected, so you choose the opponent. A match already played before the snapshot is flagged as such. All numbers are precomputed by Python (`make site`); the browser does no machine learning.
 

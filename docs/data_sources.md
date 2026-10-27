@@ -48,13 +48,19 @@ Raw data is **never committed** (see `.gitignore`); it is downloaded into
   - Club names differ from football-data → mapping table required.
   - The data was originally scraped from Transfermarkt, whose own terms were not reviewed; the CC0 label comes from the dataset author. Data stays local and uncommitted.
 
-## 5. Ligue 1 calendar — Maxifoot (display only) ⚠️
+## 5. Calendars of the matches still to play (display only)
 
-- URL: https://www.maxifoot.fr/calendrier-ligue1.htm (page read once; cached in `data/raw/calendar/`, not committed)
-- Used **only** to show a Ligue 1 team's 2nd and 3rd upcoming matches on the website (opponent and date); it is **not** a model input.
-- `robots.txt` does not disallow this page; the site's terms of use were not reviewed. The parser is validated: 34 matchdays of exactly 18 distinct clubs, and the 63 results it lists for matches already in our data agree with football-data (0 mismatches). OL's next fixtures were cross-checked against Lyon Capitale's full OL calendar.
-- Dates are those published on 25 Oct 2026 and can change. Other leagues' calendars were **not** collected.
-- It also lists 8 results of 23–25 Oct 2026 that football-data had not yet published: our team state does not include them.
+Used **only** to list and date the upcoming matches on the website; they are **not** a model input (the simulator infers the remaining matches from the results: every ordered pair plays once).
+
+- **Premier League, La Liga, Serie A, Bundesliga — openfootball** (https://github.com/openfootball, text files `2026-27/*.txt`, public domain / CC0). Dates and times of the whole season; the scores in these files are older than football-data's, so a match counts as played only if it is in football-data's results. Parsed by `src/olpred/data/openfootball.py` (club names mapped to football-data's by an explicit table, checked against all 78 clubs). Checked against reality: for the 322 matches already played, the calendar date equals the actual date in 98 % of cases (maximum gap 2 days).
+- **Ligue 1 — Maxifoot** (https://www.maxifoot.fr/calendrier-ligue1.htm, read once per refresh, cached in `data/raw/calendar/`, not committed). `robots.txt` does not disallow this page; the site's terms of use were not reviewed. The parser is validated (34 matchdays of exactly 18 distinct clubs). One published error is repaired: Rennes–Paris SG appears twice (matchdays 1 and 23); the second is the return leg, Paris SG–Rennes (`repair_duplicates`).
+- Dates and kick-off times can change (television, European fixtures). Times are shown only for matches in the next 10 days; a match that is still unplayed after its published date is flagged "postponed".
+
+## 5b. UEFA competitions — Wikipedia (scores and dates only)
+
+- Pages `2026–27 UEFA Champions League league phase` and `2026–27 UEFA Europa League league phase` (wikitext fetched once per refresh through the public API, text under CC BY-SA; only dates, scores and club names, which are facts, are used). Parser: `src/olpred/data/uefa.py`.
+- **The pages lag**: on 27 Oct 2026 they listed 29 of the 54 Champions League matches already played (all 54 of the Europa League). The number of missing matches is shown on the site; those matches are simulated.
+- Not in the Transfermarkt dataset (strength assumed low): 3 Champions League and 8 Europa League clubs, listed in [`europe_ucl.md`](europe_ucl.md).
 
 ## 6. Excluded
 

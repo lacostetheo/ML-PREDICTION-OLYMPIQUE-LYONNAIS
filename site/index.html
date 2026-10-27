@@ -3,169 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OL·LAB — football forecasts, explained</title>
-<meta name="description" content="Walk-forward machine-learning forecasts for the five major European leagues, with Olympique Lyonnais as the case study: projected top 3, match probabilities, Monte Carlo seasons and a race between models.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23190a50'/%3E%3Cpath d='M16 5l9 5v12l-9 5-9-5V10z' fill='none' stroke='%235bc8ef' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23f5c542'/%3E%3C/svg%3E">
+<title>OL·LAB — who wins 2026/27, and what happens next</title>
+<meta name="description" content="Machine-learning predictions for the five major European leagues, the Champions League and the Europa League: the model's pick, every upcoming match, and a track record against the results. Olympique Lyonnais is the case study.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23FBF9F4'/%3E%3Ccircle cx='16' cy='16' r='9' fill='%23C8321E'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="shell" id="shell">
-  <aside class="side" aria-label="Navigation">
-    <div class="brand">
-      <svg class="hex" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l11 6v14l-11 6-11-6V9z" fill="none" stroke="#5bc8ef" stroke-width="2.2"/><path d="M16 11l5 3v5l-5 3-5-3v-5z" fill="#5bc8ef"/></svg>
-      <div><b>OL·LAB</b><small>football forecasts</small></div>
-    </div>
-    <nav class="nav" role="tablist">
-      <button role="tab" data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>Dashboard</button>
-      <button role="tab" data-tab="prev"><svg viewBox="0 0 24 24"></svg>Previous results</button>
-      <button role="tab" data-tab="lab"><svg viewBox="0 0 24 24"><path d="M9 2h6v2h-1v5l5 9a2 2 0 0 1-1.7 3H6.7A2 2 0 0 1 5 18l5-9V4H9z"/></svg>Match Lab</button>
-      <button role="tab" data-tab="mc"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm8 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-4 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM8 14a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm8 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>Season Monte Carlo</button>
-      <button role="tab" data-tab="arena"><svg viewBox="0 0 24 24"><path d="M4 20V10h3v10zm6 0V4h3v16zm6 0v-7h3v7z"/></svg>Model Arena</button>
-      <button role="tab" data-tab="model"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>The model</button>
-    </nav>
-    <a class="cta" href="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS" target="_blank" rel="noopener">＋ View the code</a>
-  </aside>
-
-  <div class="main">
-    <header class="topbar">
-      <button class="hide" id="hide-menu" aria-label="Show or hide the menu">☰ <span>Hide Menu</span></button>
-      <div class="picker" id="picker">
-        <label>League <select id="league" aria-label="League"></select></label>
-        <label>Team <select id="team" aria-label="Team"></select></label>
-      </div>
-      <div class="user"><span>Théo Lacoste</span><div class="avatar" aria-hidden="true">TL</div></div>
-    </header>
-
-    <div class="content">
-      <!-- ============================== DASHBOARD ============================== -->
-      <section id="tab-home" class="tab on" aria-labelledby="home-title">
-        <div class="pagehead">
-          <p class="eyebrow" id="asof">—</p>
-          <h1 id="home-title">Dashboard — projected final tables</h1>
-          <p>Projected top 3 of each league after 10,000 simulated seasons, plus the race for European places. Click any team to open its Match Lab.</p>
-        </div>
-        <div class="grid g4" id="kpis"></div>
-        <h3 class="h3" style="margin:22px 0 12px">Projected top 3 <span class="chip">by expected final position</span></h3>
-        <div class="grid g5" id="top3" style="margin-bottom:16px"></div>
-        <div class="grid g-home">
-          <div>
-            <div class="card"><h3 id="race-title">Title race</h3><div id="race"></div>
-              <p class="note">Bars: chance to win the league (light) and to finish in the top 4 (dark), over 10,000 simulations.</p></div>
-            <div class="grid g2">
-              <div class="card"><h3>Champions League places <span class="chip">most likely qualifiers</span></h3><div class="tablewrap" id="ucl"></div></div>
-              <div class="card"><h3>Other European places <span class="chip">Europa / Conference</span></h3><div class="tablewrap" id="uel"></div></div>
-            </div>
-            <div class="grid g2">
-              <div class="card"><h3>Champions League winner <span class="chip">indicative</span></h3><div class="tablewrap" id="ucl-win"></div>
-                <p class="note" id="ucl-note"></p></div>
-              <div class="card"><h3>How the Champions League winner is computed</h3><ul class="limits" style="font-size:12.5px;color:var(--text)">
-                <li>Real 2026/27 fixtures and results so far, then 20,000 simulations of the rest: league phase, play-offs, round of 16 to final.</li>
-                <li>Strength = <b>squad market value</b> + <b>domestic form</b>, fitted on 3,085 past European matches. Value is clearly useful (log loss 0.984 vs 1.035); domestic form adds nothing measurable.</li>
-                <li>Bracket pairings are approximate and three clubs (AEK, Sabah, Slovan) are not in the data: assumed weak.</li>
-                <li><b>Europa League winner: not predicted yet</b> (same method possible, fixtures not collected).</li></ul></div>
-            </div>
-          </div>
-          <div>
-            <div class="card"><div class="up-day" id="up-day">Next round</div><div id="upcoming"></div>
-              <p class="note">Arrow = most likely outcome for the home side. Click to open the match.</p></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================== PREVIOUS RESULTS ============================== -->
-      <section id="tab-prev" class="tab" aria-labelledby="prev-title">
-        <div class="pagehead"><p class="eyebrow" id="prev-asof">—</p><h1 id="prev-title">Previous results — were the forecasts right?</h1>
-          <p>Each played match with the probabilities the model gave <b>before</b> kick-off, and what happened.</p></div>
-        <p class="callout"><b>Read this first.</b> These forecasts are recomputed after the fact with the walk-forward method (model fitted only on earlier seasons, features built only from earlier matches). They were <b>not published in advance</b>. "Right" means the most likely outcome happened — a 45 % pick is wrong more often than right, by design. The fair scores are the log loss and the calibration table.</p>
-        <div class="grid g4" id="prev-kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px"></div>
-        <div class="card"><h3>Do the percentages mean what they say? <span class="chip">all 5,602 test matches</span></h3><div class="tablewrap" id="prev-cal"></div>
-          <p class="note">When the top pick was given 60–70 %, it happened 63 % of the time: the percentages are honest. The bookmaker is still slightly sharper (log loss above).</p></div>
-        <div class="card"><h3>Match by match <span class="chip">most recent first</span><select id="prev-league" aria-label="League filter" style="margin-left:auto"></select></h3>
-          <div class="tablewrap" id="prev-table" style="max-height:640px;overflow-y:auto"></div></div>
-      </section>
-
-      <!-- ============================== MATCH LAB ============================== -->
-      <section id="tab-lab" class="tab" aria-labelledby="lab-title">
-        <div class="pagehead"><p class="eyebrow">Team state as of <span id="asof-lab"></span></p><h1 id="lab-title">Match Lab</h1>
-          <p>Pick a team: its <b>next three matches</b>, then open any match and see how the model builds its forecast, one piece of evidence at a time.</p></div>
-        <div class="grid g-lab">
-          <div>
-            <div class="card teamcard" id="teamcard"></div>
-            <h3 class="h3" style="margin:0 0 10px">Next 3 matches <span id="next-team" class="chip"></span></h3>
-            <div id="next3" class="next3"></div><p class="note" id="next3-note"></p>
-          </div>
-          <div>
-            <div class="card"><h3>Match simulator</h3>
-              <div class="sim-controls"><label>Opponent <select id="opp" aria-label="Opponent"></select></label>
-                <div class="seg-toggle" role="group" aria-label="Venue"><button id="v-home" class="on">Home</button><button id="v-away">Away</button></div></div>
-              <div id="match-title" class="match-title"></div><div id="match-bar"></div><div id="match-facts" class="facts"></div></div>
-            <div class="card"><h3>How the model got there</h3>
-              <p class="note top0">Each bar is the push one family of evidence gives to the odds <i>this team wins rather than loses</i>, relative to an average Big-5 match. The model is a logistic regression, so these pieces add up <b>exactly</b>.</p>
-              <div id="waterfall"></div><button class="ghost" id="replay-wf">↻ replay</button></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================== MONTE CARLO ============================== -->
-      <section id="tab-mc" class="tab" aria-labelledby="mc-title">
-        <div class="pagehead"><p class="eyebrow">Season 2026/27 · rest of the season</p><h1 id="mc-title">Season Monte Carlo</h1>
-          <p>The Python model has played out the rest of the season <b>10,000 times</b>. Watch a replay of the first 3,000 simulated seasons build the distribution of <b id="mc-team-lead">the team's</b> final position — the dashed outline is the final answer.</p></div>
-        <div class="card controls"><button id="mc-play" class="primary">▶ Play</button><button id="mc-skip" class="ghost" style="margin:0">⏭ Jump to end</button><button id="mc-reset" class="ghost" style="margin:0">↺ Reset</button>
-          <label class="speed">Speed <input type="range" id="mc-speed" min="0" max="4" value="2" aria-label="Replay speed"></label>
-          <span class="counter">simulation <b id="mc-n">0</b> / <span id="mc-total">3000</span></span></div>
-        <div class="card ticker" id="mc-ticker">press play to start</div>
-        <div class="grid g2">
-          <div class="card"><h3>Final league position</h3><div id="mc-pos"></div><div id="mc-probs" class="probs"></div></div>
-          <div class="card"><h3>Final points</h3><div id="mc-pts"></div><p class="note" id="mc-pts-note"></p></div>
-        </div>
-        <div class="card"><h3>League outlook <span class="chip">all 10,000 simulations</span></h3><div id="mc-table" class="tablewrap"></div>
-          <p class="note">European slots and relegation places are assumptions (Champions League = top 3 in Ligue 1, top 4 elsewhere). Backtested on 2023–2025: it beat the naive reference, but its "80 %" intervals covered only 72 % — read them as lower bounds.</p></div>
-      </section>
-
-      <!-- ============================== ARENA ============================== -->
-      <section id="tab-arena" class="tab" aria-labelledby="ar-title">
-        <div class="pagehead"><p class="eyebrow">Walk-forward test · 5,602 matches · 2023 → 2026</p><h1 id="ar-title">Model Arena</h1>
-          <p>Seven forecasters, the same matches, one score: <b>cumulative log loss</b> (lower is better). Press play and watch them settle: three of our models run neck and neck, and <b>the bookmaker stays ahead</b>.</p></div>
-        <div class="card controls"><button id="ar-play" class="primary">▶ Play</button><button id="ar-reset" class="ghost" style="margin:0">↺ Reset</button>
-          <input type="range" id="ar-scrub" min="10" max="100" value="100" aria-label="Position in the test period" class="scrub">
-          <span class="counter"><b id="ar-n">0</b> matches · <span id="ar-date"></span></span></div>
-        <div class="card"><canvas id="ar-canvas" height="430" aria-label="Cumulative log loss of each model over the test matches"></canvas><div id="ar-legend" class="legend"></div>
-          <p class="note">Curves start after ~450 matches (earlier averages are too noisy). The three bunched models are statistically tied (95 % intervals overlap); the gap to the bookmaker is significant.</p></div>
-        <div class="card"><h3>Final scores <span class="chip">with 95 % interval</span></h3><div id="ar-table" class="tablewrap"></div></div>
-      </section>
-
-      <!-- ============================== MODEL ============================== -->
-      <section id="tab-model" class="tab" aria-labelledby="md-title">
-        <div class="pagehead"><p class="eyebrow">What is actually running</p><h1 id="md-title">The model, in plain words</h1></div>
-        <div class="card chosen"><span class="badge">CHOSEN MODEL</span><h2>Multinomial logistic regression</h2>
-          <p>One linear formula per outcome (home win, draw, away win) on <b>100 inputs</b>, turned into probabilities by a softmax. Re-fitted every season on all past matches, with its regularisation chosen by time-ordered cross-validation.</p>
-          <ul class="why"><li><b>As accurate as the alternatives.</b> Gradient boosting, random forest and neural networks were tested: none beats it significantly (averaging all three gains a negligible 0.0014 log loss).</li>
-            <li><b>Explainable.</b> Every forecast splits exactly into the contribution of Elo, squad value, form, shots… — that is what the Match Lab shows.</li>
-            <li><b>Honest.</b> Its probabilities are well calibrated: a "70 %" forecast comes true about 70 % of the time.</li></ul></div>
-        <h3 class="h3">From data to forecast</h3><div class="pipeline" id="pipeline"></div>
-        <div class="grid g2">
-          <div class="card"><h3>What about neural networks?</h3><canvas id="nn-canvas" height="260" aria-label="Illustration of a neural network architecture"></canvas>
-            <p class="note"><b>Tested, not retained.</b> A 100 → 64 → 32 → 3 network scored 0.9796 vs 0.9793 for the logistic regression (statistically tied) and needed far more tuning. Illustration of the architecture only — not the learned weights.</p></div>
-          <div class="card"><h3>Glossary</h3><dl class="gloss">
-            <dt>Elo rating</dt><dd>A strength score updated after every match: beat a strong team and it jumps, lose to a weak one and it drops.</dd>
-            <dt>Log loss</dt><dd>Penalises confident wrong forecasts heavily. Lower is better; 1.075 = ignoring team quality, 0.966 = the bookmaker.</dd>
-            <dt>Calibration</dt><dd>Do forecasts mean what they say? Among matches given 70 %, ~70 % should happen.</dd>
-            <dt>Walk-forward</dt><dd>Train on the past, predict the next season, repeat. Never test on data older than the training set.</dd>
-            <dt>Leakage</dt><dd>Using information from after the match. An automated test checks that the pipeline cannot.</dd>
-            <dt>Monte Carlo</dt><dd>Play the rest of the season thousands of times with the model's probabilities and count what happens.</dd></dl></div>
-        </div>
-        <div class="card"><h3>Limits you should know</h3><ul class="limits">
-          <li>No injuries, line-ups or coaching news — the likely reason the bookmaker is better.</li>
-          <li>Draws are essentially unpredictable: the model almost never names a draw as the most likely outcome.</li>
-          <li>Team strength is a snapshot of <b id="asof2">—</b>. Results of 23–25 October 2026 were not yet in the data source.</li>
-          <li>Champions League winner: indicative only (tested on single matches, not on whole tournaments); no Europa League winner yet.</li>
-          <li>Calendars beyond the next round come from a public Ligue 1 calendar (dates can change); other leagues: choose the opponent.</li>
-          <li>Academic project — <b>not betting advice</b>.</li></ul></div>
-      </section>
-    </div>
-    <footer><p>Data: football-data.co.uk (results, odds — private, non-commercial use), Transfermarkt dataset (CC0), Ligue 1 calendar from Maxifoot's public page (display only). Code and method: <a href="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS">GitHub repository</a>. Forecasts are statistical estimates, not betting advice.</p></footer>
-  </div>
-</div>
+<header class="mast"><div class="wrap">
+  <a class="mark" href="#picks">OL·LAB</a>
+  <nav id="nav" aria-label="Pages">
+    <a href="#picks" data-p="picks">Picks</a>
+    <a href="#matches" data-p="matches">Matches</a>
+    <a href="#standings" data-p="standings">Standings</a>
+    <a href="#team" data-p="team">Team</a>
+    <a href="#results" data-p="results">Results</a>
+    <a href="#method" data-p="method">Method</a>
+  </nav>
+</div></header>
+<main id="app" class="wrap" tabindex="-1"></main>
+<footer><div class="wrap">
+  <p>Data: football-data.co.uk (results and odds, private non-commercial use), Transfermarkt (squad values, CC0), openfootball (calendars, public domain), Maxifoot (Ligue 1 calendar), Wikipedia (European fixtures and scores).</p>
+  <p>Statistical estimates from a model, not betting advice. <a href="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS">Code and paper on GitHub</a>.</p>
+</div></footer>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

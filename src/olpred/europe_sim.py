@@ -1,8 +1,8 @@
-"""Monte Carlo of the 2026/27 Champions League (league phase -> knockout -> final).
+"""Monte Carlo of the 2026/27 Champions League and Europa League (league phase -> knockout -> final).
 
-Inputs: the real fixture list and results so far (``data/raw/calendar/ucl_2026_27.csv``,
-copied from Wikipedia), the European strength model of ``olpred.europe`` and the clubs'
-current squad values / domestic form.  Run:  python -m olpred.europe_sim
+Inputs: the real fixture list and results so far (``olpred.data.uefa``, from Wikipedia), the European
+strength model of ``olpred.europe`` and the clubs' current squad values / domestic form.
+Run:  python -m olpred.europe_sim
 
 Assumptions (all flagged in docs/europe_ucl.md): bracket structure follows the 2024/25
 pattern but pairings inside a tier are drawn at random; knockout ties are decided over two legs
@@ -17,10 +17,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from olpred.data import uefa
 from olpred.europe import CLUB_IDS, EuropeModel, PPG_WINDOW, domestic_ppg
 
 TABLES = Path("reports/tables")
-CAL = Path("data/raw/calendar/ucl_2026_27.csv")
+COMPS = {"ucl": "Champions League", "uel": "Europa League"}
 SIGMA = 0.15
 N_SIMS = 20_000
 PEN_SHRINK = 0.5   # extra time / penalties: win prob moves only half-way from 50 % towards the stronger side
@@ -30,7 +31,7 @@ PLAYOFF = {"P1": ((9, 10), (23, 24)), "P2": ((11, 12), (21, 22)),
 R16_SEED_PATH = {1: "P4", 2: "P3", 3: "P1", 4: "P2", 5: "P1", 6: "P2", 7: "P3", 8: "P4"}
 
 
-def team_inputs(teams: list[str]) -> pd.DataFrame:
+def team_inputs(teams: list[str], ids: dict) -> pd.DataFrame:
     """log squad value (snapshot of 1 Nov 2026 = valuations to June 2026) and domestic ppg."""
     snaps = pd.read_parquet("data/processed/euro_snaps.parquet")
     snap = snaps[snaps["month"] == snaps["month"].max()].set_index("club_id")
@@ -50,14 +51,14 @@ def team_inputs(teams: list[str]) -> pd.DataFrame:
 
     out = []
     for t in teams:
-        cid = CLUB_IDS[t]
+        cid = ids[t]
         lv = np.log(snap.loc[cid, "sv_total"]) if cid in snap.index else np.nan
         ppg = ppg_big5.get(cid, ppg_tm.get(cid, np.nan)) if cid else np.nan
         src = "football-data (2026/27)" if cid in ppg_big5.index else ("Transfermarkt (2025/26)" if cid else "assumed")
         out.append({"team": t, "lv": lv, "ppg": ppg, "ppg_source": src})
     d = pd.DataFrame(out)
     d["assumed"] = d["lv"].isna()
-    # clubs absent from the dataset (AEK, Sabah, Slovan Bratislava): weakest observed value, median ppg
+    # clubs absent from the dataset (small leagues): weakest observed value, median ppg
     d["lv"] = d["lv"].fillna(d["lv"].min())
     d["ppg"] = d["ppg"].fillna(d["ppg"].median())
     return d
@@ -166,25 +167,44 @@ def simulate(teams, lv0, ppg, model, fixtures, pools, n_sims=N_SIMS, sigma=SIGMA
     return res.sort_values("Winner", ascending=False).reset_index(drop=True), pos_hist / n_sims
 
 
-def main() -> None:
-    fx = pd.read_csv(CAL)
+def run(comp: str, model: EuropeModel, pools: dict, refresh: bool = True) -> None:
+    fx = uefa.load(comp, refresh=refresh)
     teams = sorted(set(fx["home"]) | set(fx["away"]))
-    inp = team_inputs(teams)
-    d = pd.read_parquet("data/processed/euro_matches.parquet")
-    model = EuropeModel().fit(d)
-    pools = {k: d.loc[d["y"] == k, ["home_club_goals", "away_club_goals"]].to_numpy(int) for k in (0, 1, 2)}
-    res, _ = simulate(teams, inp["lv"].to_numpy(), inp["ppg"].to_numpy(), model, fx, pools)
-    res = res.merge(inp[["team", "ppg", "ppg_source", "assumed"]], on="team")
-    res.round(4).to_csv(TABLES / "europe_ucl_probabilities.csv", index=False)
+    inp = team_inputs(teams, CLUB_IDS[comp])
+    lv, ppg = inp["lv"].to_numpy(), inp["ppg"].to_numpy()
+    res, _ = simulate(teams, lv, ppg, model, fx, pools)
+    ix = {t: i for i, t in enumerate(teams)}
+    # league phase so far
+    now = pd.DataFrame(0, index=teams, columns=["pts_now", "gd_now", "played"], dtype=float)
+    for r in fx[fx["hg"].notna()].itertuples():
+        for t, gf, ga in ((r.home, r.hg, r.ag), (r.away, r.ag, r.hg)):
+            now.loc[t, "pts_now"] += 3 * (gf > ga) + (gf == ga); now.loc[t, "gd_now"] += gf - ga; now.loc[t, "played"] += 1
+    res = res.merge(inp[["team", "ppg", "ppg_source", "assumed"]], on="team").merge(now, left_on="team", right_index=True)
+    res.round(4).to_csv(TABLES / f"europe_{comp}_probabilities.csv", index=False)
+    # forecast of every match still to play (strength frozen at today's value, no shock)
+    P = prob_tensor(model, lv, ppg)
+    todo = fx[fx["hg"].isna()].copy()
+    pr = P[todo["home"].map(ix).to_numpy(), todo["away"].map(ix).to_numpy()]
+    todo[["p_away", "p_draw", "p_home"]] = pr
+    todo.drop(columns=["hg", "ag"]).round(4).to_csv(TABLES / f"europe_{comp}_fixtures.csv", index=False)
     # sensitivity to the strength-shock size
     sens = {}
     for sg in (0.0, 0.3):
-        r, _ = simulate(teams, inp["lv"].to_numpy(), inp["ppg"].to_numpy(), model, fx, pools, n_sims=5000, sigma=sg, seed=2)
+        r, _ = simulate(teams, lv, ppg, model, fx, pools, n_sims=5000, sigma=sg, seed=2)
         sens[str(sg)] = r.set_index("team")["Winner"].round(4).head(8).to_dict()
-    json.dump({"played": int(fx["hg"].notna().sum()), "total": len(fx), "sensitivity_title": sens},
-              open(TABLES / "europe_ucl_meta.json", "w"), indent=1)
+    json.dump({"played": int(fx["hg"].notna().sum()), "total": len(fx), "n_assumed": int(inp["assumed"].sum()),
+               "sensitivity_title": sens}, open(TABLES / f"europe_{comp}_meta.json", "w"), indent=1)
     pd.set_option("display.width", 200)
-    print(res.head(16).round(3).to_string()); print(sens)
+    print(f"== {COMPS[comp]}: {int(fx['hg'].notna().sum())} of {len(fx)} matches played, {int(inp['assumed'].sum())} clubs assumed")
+    print(res.head(12)[["team", "pts_now", "exp_points", "top8", "top24", "Final", "Winner"]].round(3).to_string()); print(sens)
+
+
+def main() -> None:
+    d = pd.read_parquet("data/processed/euro_matches.parquet")
+    model = EuropeModel().fit(d)
+    pools = {k: d.loc[d["y"] == k, ["home_club_goals", "away_club_goals"]].to_numpy(int) for k in (0, 1, 2)}
+    for comp in COMPS:
+        run(comp, model, pools)
 
 
 if __name__ == "__main__":

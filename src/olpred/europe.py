@@ -26,16 +26,26 @@ from olpred.features.squad_value import monthly_snapshots
 
 TABLES = Path("reports/tables")
 PPG_WINDOW = 20
-# Transfermarkt club ids of the 2026/27 Champions League league-phase clubs (None = not in the dataset)
+# Transfermarkt club ids of the 2026/27 league-phase clubs (None = not in the dataset)
 CLUB_IDS = {
-    "AEK Athens": None, "Arsenal": 11, "Aston Villa": 405, "Atlético Madrid": 13, "Barcelona": 131,
-    "Bayern Munich": 27, "Bodø/Glimt": 501, "Borussia Dortmund": 16, "Club Brugge": 2282,
-    "Como": 1047, "Fenerbahçe": 36, "Feyenoord": 234, "Galatasaray": 141, "Inter Milan": 46,
-    "LASK": 413, "Lens": 826, "Lille": 1082, "Liverpool": 31, "Manchester City": 281,
-    "Manchester United": 985, "Napoli": 6195, "PSV Eindhoven": 383, "Paris Saint-Germain": 583,
-    "Porto": 720, "RB Leipzig": 23826, "Real Betis": 150, "Real Madrid": 418, "Roma": 12,
-    "Sabah": None, "Shakhtar Donetsk": 660, "Slavia Prague": 62, "Slovan Bratislava": None,
-    "Sporting CP": 336, "VfB Stuttgart": 79, "Viking": 239, "Villarreal": 1050}
+    "ucl": {
+        "AEK Athens": None, "Arsenal": 11, "Aston Villa": 405, "Atlético Madrid": 13, "Barcelona": 131,
+        "Bayern Munich": 27, "Bodø/Glimt": 501, "Borussia Dortmund": 16, "Club Brugge": 2282,
+        "Como": 1047, "Fenerbahçe": 36, "Feyenoord": 234, "Galatasaray": 141, "Inter Milan": 46,
+        "LASK": 413, "Lens": 826, "Lille": 1082, "Liverpool": 31, "Manchester City": 281,
+        "Manchester United": 985, "Napoli": 6195, "PSV Eindhoven": 383, "Paris Saint-Germain": 583,
+        "Porto": 720, "RB Leipzig": 23826, "Real Betis": 150, "Real Madrid": 418, "Roma": 12,
+        "Sabah": None, "Shakhtar Donetsk": 660, "Slavia Prague": 62, "Slovan Bratislava": None,
+        "Sporting CP": 336, "VfB Stuttgart": 79, "Viking": 239, "Villarreal": 1050},
+    "uel": {
+        "AZ": 1090, "Anderlecht": 58, "Ararat-Armenia": None, "Bayer Leverkusen": 15, "Benfica": 294,
+        "Beşiktaş": 114, "Bournemouth": 989, "Celje": None, "Celta Vigo": 940, "Celtic": 371,
+        "Crystal Palace": 873, "Dinamo Zagreb": 419, "Ferencváros": None, "Hapoel Be'er Sheva": None,
+        "Jagiellonia Białystok": 2300, "Juventus": 506, "Lech Poznań": 238, "Levski Sofia": None,
+        "Lillestrøm": 353, "Lyon": 1041, "Marseille": 244, "Milan": 5, "NEC": 467, "OFI": None,
+        "Olympiacos": 683, "Omonia": None, "Real Sociedad": 681, "Red Bull Salzburg": 409,
+        "Rennes": 273, "Sparta Prague": 197, "Sturm Graz": 122, "Sunderland": 289, "TSG Hoffenheim": 533,
+        "Torreense": None, "Union Saint-Gilloise": 3948, "Viktoria Plzeň": 941}}
 
 
 def domestic_ppg(games: pd.DataFrame) -> pd.DataFrame:
@@ -100,7 +110,7 @@ def main() -> None:
     games = tm.load("games")
     games["date"] = pd.to_datetime(games["date"])
     e = european_matches(games)
-    clubs = set(e["home_club_id"]) | set(e["away_club_id"]) | {v for v in CLUB_IDS.values() if v}
+    clubs = set(e["home_club_id"]) | set(e["away_club_id"]) | {v for ids in CLUB_IDS.values() for v in ids.values() if v}
     snaps = monthly_snapshots(tm.load("player_valuations"), clubs, "2011-07-01", "2026-11-01")
     snaps.to_parquet("data/processed/euro_snaps.parquet")
     ppg = domestic_ppg(games)

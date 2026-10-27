@@ -5,6 +5,7 @@ the data come from reports/tables/ and site/data.js, so the text cannot drift fr
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -72,11 +73,25 @@ D = json.loads(t[len("window.OLDATA = "):].rstrip().rstrip(";"))
 final = pd.read_csv(TAB / "final_test_table.csv", index_col=0)
 ucl = pd.read_csv(TAB / "europe_ucl_probabilities.csv")
 euro = pd.read_csv(TAB / "europe_walk_forward.csv", index_col=0)
-euro_meta = json.loads((TAB / "europe_ucl_meta.json").read_text())
 prev = D["prev"]
 sim = D["leagues"]["F1"]["sim"]
 ol = sim["summary"]["Lyon"]  # exp_pts,p10,p90,exp_pos,title,cl,top4,top6,europe,rel,pts_now,played
 ol_pos = sim["pos_probs"]["Lyon"]
+uel = pd.read_csv(TAB / "europe_uel_probabilities.csv")
+euro_meta = {c: json.loads((TAB / f"europe_{c}_meta.json").read_text()) for c in ("ucl", "uel")}
+eb = json.loads((TAB / "europe_bootstrap.json").read_text())
+boot = pd.read_csv(TAB / "final_test_bootstrap.csv").set_index(["model", "vs"])
+pool = pd.read_csv(TAB / "final_test_market_pooling.csv").set_index("model")
+profile = pd.read_csv(TAB / "ol_strength_profile.csv").set_index("dimension")
+matches = pd.read_parquet("data/processed/matches.parquet")
+preds = pd.read_parquet(TAB / "final_test_predictions.parquet")
+AS_OF, THROUGH = pd.Timestamp(D["as_of"]), pd.Timestamp(D["data_through"])
+ROUNDS = D["leagues"]["F1"]["rounds"]["played"]
+th = lambda n: f"{n:,}".replace(",", "{,}")                                   # 5,650 -> 5{,}650 (LaTeX)
+fd = lambda ts: ts.strftime("%-d %B %Y")
+WORDS = ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth",
+         "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth"]
+NUM = {6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten"}
 LR, BK, NV = "LogReg (final)", "Bookmaker Bet365 (reference)", "Class frequency (naive)"
 ll = lambda k: final.loc[k, "log_loss"]
 
@@ -120,7 +135,7 @@ TITLE = r"""
 {\large Théo Lacoste}\\[2pt]
 {\small EDHEC Business School}\\[2pt]
 {\small \texttt{""" + REPO + r"""}}\\[10pt]
-{\normalsize October 27, 2026}
+{\normalsize """ + AS_OF.strftime("%B %-d, %Y") + r"""}
 \end{center}
 \vspace{2pt}
 \begin{center}\begin{minipage}{0.88\textwidth}\small\itshape
@@ -131,16 +146,16 @@ TITLE = r"""
 \begin{center}\textbf{Abstract}\end{center}
 \vspace{-4pt}
 \begin{center}\begin{minipage}{0.88\textwidth}\small
-This project was carried out in October 2026, two months into the 2026/27 season, and every ``current'' number refers to the state of 26 October 2026 (7 Ligue 1 matches played).
+This project was carried out in October 2026, two months into the 2026/27 season, and every ``current'' number refers to the state of @ASOF@ (@ROUNDSN@ Ligue 1 matches played).
 We ask whether machine learning can forecast the results of Olympique Lyonnais (OL) better than an Elo rating or the betting market.
-On 29{,}239 matches of the five major European leagues (2010/11 to October 2026) we build features strictly from information available before kick-off, checked by an automated perturbation test,
-and compare Elo, Poisson, logistic regression, random forest, gradient boosting, SVM and neural networks on a walk-forward test of 5{,}602 matches.
+On @N_ALL@ matches of the five major European leagues (2010/11 to October 2026) we build features strictly from information available before kick-off, checked by an automated perturbation test,
+and compare Elo, Poisson, logistic regression, random forest, gradient boosting, SVM and neural networks on a walk-forward test of @N_TEST@ matches.
 (i)~The \emph{chosen model} is a multinomial logistic regression on 100 variables, refitted every season.
 (ii)~Boosting and neural networks are statistically indistinguishable from it (log loss """ + f"{ll(LR):.3f}" + r"""); all beat Elo (""" + f"{ll('Elo (LogReg)'):.3f}" + r""") but none beats the bookmaker (""" + f"{ll(BK):.3f}" + r""").
 (iii)~Pooling our probabilities with the market's adds nothing: the optimal weight on the model is zero.
 (iv)~Elo and squad market value explain almost everything that is predictable.
 A Monte Carlo simulator, backtested on 2023--2025, projects OL at """ + f"{ol[0]:.1f}" + r""" points (80\% interval """ + f"{ol[1]:.0f}--{ol[2]:.0f}" + r"""), an average final position of """ + f"{ol[3]:.1f}" + r""" and a """ + pct(ol[6]) + r""" chance of the top four.
-A Champions League extension finds no clear favourite: five clubs sit around 13\%.
+The Champions League and the Europa League, which OL plays this season, have no clear favourite: the best-placed club wins only """ + pct(ucl["Winner"].max()) + r""" and """ + pct(uel["Winner"].max()) + r""" of the simulations respectively.
 \end{minipage}\end{center}
 """
 
@@ -149,8 +164,8 @@ add = BODY.append
 
 # ------------------------------------------------------------------ 1 Introduction
 add(r"\section{Introduction}")
-add(r"""\textbf{When this was done.} This project was carried out in \textbf{October 2026}, two months into the 2026/27 season. Seven rounds of Ligue 1 had been played; the data end with the matches of 21 October 2026,
-and the snapshot used for all forecasts is dated 26 October 2026. Anything described as ``current'', ``next'' or ``projected'' refers to that date and will change as the season goes on.""")
+add(r"""\textbf{When this was done.} This project was carried out in \textbf{October 2026}, two months into the 2026/27 season. @ROUNDSW@ rounds of Ligue 1 had been played; the data end with the matches of @THROUGH@,
+and the snapshot used for all forecasts is dated @ASOF@. Anything described as ``current'', ``next'' or ``projected'' refers to that date and will change as the season goes on.""")
 add(r"""Football is the sport where the gap between a simple forecast and the best one is smallest: a match is decided by a handful of goals,
 the stronger team wins only about one time in two, and one game in four ends in a draw. This makes it a good laboratory for a question that also matters in finance:
 \emph{how much can a model extract from public data, how reliably can that be measured, and does it survive comparison with a liquid market?}""")
@@ -160,11 +175,15 @@ add(r"""\begin{definition}[Match forecast]
 A \emph{match forecast} is a probability vector $p=(p_A,p_D,p_H)$ over the outcomes away win, draw and home win, computed from information available before kick-off.
 The \emph{expected points} of the home side are $3p_H+p_D$.
 \end{definition}""")
-add(r"""For instance, for the Ligue 1 match Paris SG--Lyon played on Monday 26 October 2026, the model gives the forecast of Table~\ref{tab:psg}, close to the bookmaker's.""")
-cap(r"Forecast for Paris SG--Lyon (Ligue 1, Monday 26 October 2026).\label{tab:psg}")
+nxt = next(m for m in D["fixtures"]["F1"] if "Lyon" in (m["h"], m["a"]))
+nh, na = esc(D["display"].get(nxt["h"], nxt["h"])), esc(D["display"].get(nxt["a"], nxt["a"]))
+nxt_date = pd.Timestamp(nxt["d"]).strftime("%A %-d %B %Y")
+p_away, p_draw, p_home = nxt["p"]
+ol_win, ol_loss = (p_home, p_away) if nxt["h"] == "Lyon" else (p_away, p_home)
+add(rf"""For instance, for OL's next Ligue 1 match, {nh}--{na} on {nxt_date}, the model gives the forecast of Table~\ref{{tab:next}}.""")
+cap(rf"Forecast for {nh}--{na} (Ligue 1, {nxt_date}).\label{{tab:next}}")
 add(tab([["", "OL win", "Draw", "OL loss", "OL expected points"],
-         ["Model", "15\\%", "21\\%", "64\\%", "0.67"],
-         ["Bookmaker (margin removed)", "15\\%", "20\\%", "65\\%", "--"]], "lcccc"))
+         ["Model", pct(ol_win), pct(p_draw), pct(ol_loss), f"{3 * ol_win + p_draw:.2f}"]], "lcccc"))
 add(rf"""\textbf{{The model I chose.}} A \emph{{multinomial logistic regression}} on 100 input variables (Elo rating, squad market value, recent form, shots, schedule),
 refitted once a year (Section~\ref{{sec:model}}). I also tested random forest, gradient boosting, a support-vector machine and neural networks, all with scikit-learn.
 None is significantly better, so I kept the simplest and most explainable one.""")
@@ -179,8 +198,9 @@ add(tab([["Source", "Content", "Use"],
          ["football-data.co.uk", "Results, shots, corners, cards, bookmaker odds; 5 leagues, 2010/11--2026", "Core data"],
          ["Transfermarkt dataset (CC0)", "656{,}000 player market valuations", "Squad value"],
          ["Self-computed", "Elo ratings, shot-based ``xG proxy''", "Variables"],
-         ["Wikipedia", "Champions League 2026/27 fixtures and scores", "Section~\\ref{sec:ucl}"]], "p{3.6cm}p{8.2cm}l"))
-add(r"""The sample has 29{,}239 matches (593 for OL) and 189 clubs: training 2011--2020 (about 18{,}200 matches), validation 2021--22 (3{,}651) and test October 2023 to October 2026 (5{,}602).
+         ["Wikipedia", "Champions League and Europa League 2026/27 fixtures and scores", "Section~\\ref{sec:ucl}"],
+         ["openfootball, Maxifoot", "Calendars of the matches still to play (dates only)", "Display"]], "p{3.6cm}p{8.2cm}l"))
+add(r"""The sample has @N_ALL@ matches (@N_OL@ for OL) and @N_CLUBS@ clubs: training 2011--2020 (about 18{,}200 matches), validation 2021--22 (3{,}651) and test October 2023 to October 2026 (@N_TEST@).
 \textbf{Rejected sources.} FBref advanced statistics were removed by their provider in January 2026; Understat forbids automated access in its \texttt{robots.txt}; ClubElo was unreachable.
 No free historical source exists for injuries or line-ups, so they could not be tested.
 \textbf{Terms of use.} football-data.co.uk allows private, non-commercial use only. This is a private academic study: raw data are downloaded, kept out of the repository and not redistributed.""")
@@ -268,16 +288,19 @@ for name, label in [(NV, "Baseline (frequencies)"), ("Elo (LogReg)", "Elo"), ("P
                     (BK, "Bookmaker (Bet365)")]:
     r = final.loc[name]
     rows.append([label, pct(r["accuracy"], 1), f"{r['log_loss']:.4f} [{r['log_loss_ci_low']:.3f}, {r['log_loss_ci_high']:.3f}]", f"{r['brier']:.4f}", f"{r['ece']:.3f}"])
-cap(r"Walk-forward test, October 2023 to October 2026 (5{,}602 matches).")
+cap(r"Walk-forward test, October 2023 to October 2026 (@N_TEST@ matches).")
 add(tab(rows, "lcccc", bold_rows=(4,)))
 add(fig("final_logloss.png", 0.8, "Log loss on the test seasons with 95\\% confidence intervals: three model families are tied, the bookmaker is ahead.", "fig:ll"))
-add(r"""\begin{result}
-The logistic regression beats Elo ($\Delta=-0.0095$, 95\% CI $[-0.0135,-0.0056]$). Gradient boosting ($-0.0007$) and the neural network ($+0.0003$) do \emph{not} beat it: their intervals contain 0.
-The bookmaker beats every model ($\Delta=+0.0135$ for the logistic regression, CI $[+0.0094,+0.0175]$). Complexity did not pay.
-\end{result}""")
+d_elo, d_gb, d_mlp, d_bk = boot.loc[(LR, "Elo (LogReg)")], boot.loc[("Gradient boosting", LR)], boot.loc[("MLP deep (5 seeds)", LR)], boot.loc[(LR, BK)]
+add(rf"""\begin{{result}}
+The logistic regression beats Elo ($\Delta={d_elo['diff']:+.4f}$, 95\% CI $[{d_elo['ci_low']:+.4f},{d_elo['ci_high']:+.4f}]$). Gradient boosting (${d_gb['diff']:+.4f}$) and the neural network (${d_mlp['diff']:+.4f}$) do \emph{{not}} beat it: their intervals contain 0.
+The bookmaker beats every model ($\Delta={d_bk['diff']:+.4f}$ for the logistic regression, CI $[{d_bk['ci_low']:+.4f},{d_bk['ci_high']:+.4f}]$). Complexity did not pay.
+\end{{result}}""")
 add(r"""\subsection{Calibration}""")
 add(fig("final_reliability.png", 0.95, "Reliability diagrams on the test seasons: the closer to the diagonal, the more honest the forecast.", "fig:rel"))
-add(r"""The probabilities are well calibrated (ECE between 1.6\% and 2.2\%). The model almost never names a draw as the most likely outcome (6 matches out of 5{,}602): draws are essentially unpredictable.""")
+ece_v = final.loc[[LR, "Gradient boosting", "MLP deep (5 seeds)", "Ensemble LogReg+GB+MLP", BK], "ece"]
+n_draw = int((preds[[f"{LR}|away", f"{LR}|draw", f"{LR}|home"]].to_numpy().argmax(1) == 1).sum())
+add(rf"""The probabilities are well calibrated (ECE between {100 * ece_v.min():.1f}\% and {100 * ece_v.max():.1f}\%). The model almost never names a draw as the most likely outcome ({n_draw} matches out of @N_TEST@): draws are essentially unpredictable.""")
 add(r"""\subsection{Ablation: which data add value?}""")
 cap(r"Ablation: nested blocks of variables (validation seasons).")
 add(tab([["Logistic regression, validation", "Log loss", "Change vs previous [95\\% CI]"],
@@ -303,8 +326,8 @@ Importance describes what the \emph{model} uses, not what causes results.
 add(r"\section{Model versus bookmaker}")
 add(r"""This is an academic question only; no betting strategy is built. To test whether the model contains information the market lacks, I pool the two by log-linear pooling,
 \begin{equation}p\;\propto\;p_{\text{market}}^{\,1-w}\;p_{\text{model}}^{\,w},\end{equation}
-and choose the weight $w$ on validation. On the test seasons the best weight on the model is $w=0.00$: the market already contains everything the model knows.
-The pooled log loss (0.9663) is not better than the market alone (0.9658). The market takes a margin of 5.5\% on average and is still sharper than the model; the likely reason is information I do not have (line-ups, injuries, news).""")
+and choose the weight $w$ on validation. On the test seasons the best weight on the model is $w=@WBEST@$: the market already contains everything the model knows.
+The pooled log loss (@POOLED@) is not better than the market alone (@MARKET@). The market takes a margin of 5.5\% on average and is still sharper than the model; the likely reason is information I do not have (line-ups, injuries, news).""")
 
 # ------------------------------------------------------------------ 10 Previous results
 add(r"\section{Previous results: was the model right?}")
@@ -322,9 +345,11 @@ add(tab(rows, "lccccc"))
 rows = [["Top pick given", "Matches", "Mean forecast", "Came true"]]
 for b in prev["calibration"]:
     rows.append([f"{int(b['lo'] * 100)}--{int(b['hi'] * 100)}\\%", b["n"], pct(b["said"]), pct(b["came_true"])])
-cap(r"When the model said $x$\%, how often did it happen? (all 5{,}602 test matches)")
+cap(r"When the model said $x$\%, how often did it happen? (all @N_TEST@ test matches)")
 add(tab(rows, "cccc"))
-add(r"""When the top pick was given 60--70\%, it happened 63\% of the time. Over the last 30 days of the data (22 September to 21 October 2026) the model is right 56\% of the time and is slightly less sharp than the bookmaker.""")
+W30 = prev["summary"]["Last 30 days"]
+sharp = "slightly less sharp than" if W30["ll"] > W30["ll_book"] else "slightly sharper than"
+add(rf"""When the top pick was given 60--70\%, it happened {pct(prev["calibration"][3]["came_true"])} of the time. Over the last 30 days of the data ({(last_d - pd.Timedelta(days=29)).strftime("%-d %B")} to {fd(last_d)}) the model is right {pct(W30["acc"])} of the time and is {sharp} the bookmaker.""")
 names = ["Away win", "Draw", "Home win"]
 rows = [["Date", "Match", "Score", "H / D / A", "Top pick", "Result"]]
 for d, lg, h, a, hg, ag, y, p in prev["rows"][:14]:
@@ -336,10 +361,15 @@ add(tab(rows, "llcccl", size=r"\footnotesize"))
 
 # ------------------------------------------------------------------ 11 OL
 add(r"\section{Case study: Olympique Lyonnais}")
-add(fig("ol_strength_profile.png", 0.8, "OL's profile in Ligue 1 on 26 October 2026 (percentile among clubs; right: rank).", "fig:prof"))
-add(r"""OL is third in Ligue 1 by Elo (1{,}615; Paris SG 1{,}707), fifth for recent points and goals scored, and fifth by squad value (EUR 305 m; the defence is only tenth).
-Results and rating are better than the shot volume (tenth for shots on target) would suggest.
-The 90\% interval on OL's win probability at Paris SG (26 October 2026) is 14--17\% with model uncertainty only (100 bootstrap refits) and 12--21\% once uncertainty on the true strength of both teams is added (Elo shaken by 60 points).""")
+add(fig("ol_strength_profile.png", 0.8, "OL's profile in Ligue 1 on @ASOF@ (percentile among clubs; right: rank).", "fig:prof"))
+elo_rank = int(profile.loc["Elo rating", "rank"])
+leader = max(D["leagues"]["F1"]["info"].items(), key=lambda kv: kv[1]["elo"])
+rk = lambda dim: WORDS[int(profile.loc[dim, "rank"])]
+v_nxt = D["pairs"]["F1"][f"{nxt['h']}|{nxt['a']}"]
+lo_hi = (v_nxt[7], v_nxt[8]) if nxt["h"] == "Lyon" else (v_nxt[3], v_nxt[4])
+add(rf"""OL is {WORDS[elo_rank]} in Ligue 1 by Elo ({th(round(profile.loc["Elo rating", "value"]))}; {esc(D["display"].get(leader[0], leader[0]))} {th(round(leader[1]["elo"]))}), {rk("Recent form: points/match, last 10")} for recent points and {rk("Recent attack: goals scored, last 10")} for goals scored,
+and {rk("Squad value: total")} by squad value (EUR {profile.loc["Squad value: total", "value"]:.0f} m; the defence is {rk("Squad value: defenders")}). Its shot volume (shots on target) ranks {rk("Recent attack: shots on target, last 10")}.
+For {nh}--{na}, the 90\% interval on OL's win probability is {100 * lo_hi[0]:.0f}--{100 * lo_hi[1]:.0f}\% once model uncertainty (100 bootstrap refits) and uncertainty on the true strength of both teams (Elo shaken by 60 points) are added.""")
 
 # ------------------------------------------------------------------ 12 Simulation
 add(r"\section{Season simulation}")
@@ -368,16 +398,19 @@ rows = [["Team", "Exp. points [80\\%]", "Title", "Champions Lg.", "Top 4", "Rele
 for tm in ["Paris SG", "Monaco", "Lille", "Lyon"]:
     v = sim["summary"][tm]
     rows.append([esc(tm), f"{v[0]:.1f} [{v[1]:.0f}--{v[2]:.0f}]", pct(v[4], 1), pct(v[5], 1), pct(v[6], 1), pct(v[9], 1)])
-cap(r"Ligue 1 2026/27 (state of 26 October 2026, after 7 rounds).")
+cap(r"Ligue 1 2026/27 (state of @ASOF@, after @ROUNDSN@ rounds).")
 add(tab(rows, "lccccc", bold_rows=(4,)))
 add(fig("sim_ol_position.png", 0.8, "Final position of OL over 10{,}000 simulated seasons.", "fig:pos"))
-add(rf"""The average final position of OL is \textbf{{{ol[3]:.1f}}}; the most likely finishes are 2nd and 3rd ({pct(ol_pos[1])} and {pct(ol_pos[2])}), but the distribution is wide:
-after 7 matches six clubs share 13--14 points, so the forecast rests on team strength rather than on the table.""")
+top2 = sorted(range(len(ol_pos)), key=lambda i: -ol_pos[i])[:2]
+pts_sorted = sorted((v[10] for v in sim["summary"].values()), reverse=True)
+add(rf"""The average final position of OL is \textbf{{{ol[3]:.1f}}}; the most likely finishes are {WORDS[top2[0] + 1]} and {WORDS[top2[1] + 1]} ({pct(ol_pos[top2[0]])} and {pct(ol_pos[top2[1]])}), but the distribution is wide:
+after {ROUNDS} matches the clubs from 2nd to 7th place are within {int(pts_sorted[1] - pts_sorted[6])} points of each other, so the forecast rests on team strength rather than on the table.""")
 
 # ------------------------------------------------------------------ 13 Champions League
-add(r"\section{Champions League 2026/27}\label{sec:ucl}")
-add(rf"""The aim is to use the real fixtures and to combine each club's performance in its own championship. The calendar (144 league-phase matches, 36 clubs) comes from Wikipedia;
-only {euro_meta['played']} had been recorded there when I collected the data on 27 October 2026 (matchdays 1 to 3 run from 8 September to 21 October 2026), so the others are simulated.
+add(r"\section{Champions League and Europa League}\label{sec:ucl}")
+eu, el = euro_meta["ucl"], euro_meta["uel"]
+add(rf"""The aim is to use the real fixtures and to combine each club's performance in its own championship; OL plays the Europa League this season. The calendars (144 league-phase matches and 36 clubs in each competition) come from Wikipedia;
+at the snapshot date {eu['played']} Champions League matches and {el['played']} Europa League matches had been recorded there, and the others are simulated.
 Domestic leagues are only comparable through matches between their clubs, so I fitted a logistic regression on 3{{,}}085 past Champions League, Europa League and Conference League matches (2012--2025):""")
 add(r"""\begin{equation}d^{\text{value}}=\ln V_{\text{home}}-\ln V_{\text{away}},\qquad d^{\text{ppg}}=\mathrm{ppg}_{\text{home}}-\mathrm{ppg}_{\text{away}},\end{equation}
 where $\mathrm{ppg}$ is the number of domestic league points per match over the last 20 league matches.""")
@@ -386,18 +419,31 @@ for k in ["Class frequency", "Squad value only", "Domestic form only", "Value + 
     rows.append([k, f"{euro.loc[k, 'log_loss']:.4f}"])
 cap(r"European strength model.")
 add(tab(rows, "lc"))
-add(r"""\begin{result}
-Squad value carries the signal ($-0.051$ vs the class frequencies, significant). Domestic form adds nothing measurable once value is known ($-0.0005$, 95\% CI $[-0.0048,+0.0037]$).
+e_val, e_form = eb["Squad value only vs Class frequency"], eb["Value + domestic form vs Squad value only"]
+add(rf"""\begin{{result}}
+Squad value carries the signal (${e_val['diff']:+.3f}$ vs the class frequencies, significant). Domestic form adds nothing measurable once value is known (${e_form['diff']:+.4f}$, 95\% CI $[{e_form['ci_low']:+.4f},{e_form['ci_high']:+.4f}]$).
 I keep it because the question asked to combine both, but its weight is small.
-\end{result}""")
+\end{{result}}""")
 add(r"""I then simulated 20{,}000 times the rest of the league phase, the play-offs (ranks 9--24), the round of 16, quarter-finals, semi-finals and the final (two legs; extra time and penalties close to a coin flip; the final on neutral ground).""")
 rows = [["Club", "Top 8", "Semi-final", "Final", "Winner"]]
 for r in ucl.head(10).itertuples():
     rows.append([esc(r.team), pct(r.top8), pct(r.SF), pct(r.Final), pct(r.Winner, 1)])
 cap(r"Champions League 2026/27: probabilities from 20{,}000 simulations.")
 add(tab(rows, "lcccc"))
-add(r"""There is \textbf{no clear favourite}: Arsenal, Manchester City, Barcelona, Real Madrid and Paris SG are each around 13\%, Bayern 10\%, Liverpool 6\%; the differences between the first five are smaller than the uncertainty.
-This model is validated match by match, not on whole tournaments; the knockout bracket is approximate; AEK Athens, Sabah and Slovan Bratislava are not in the data and are assumed weak. No Europa League winner is predicted yet.""")
+rows = [["Club", "Top 8", "Semi-final", "Final", "Winner"]]
+shown = list(uel.head(10).itertuples())
+if not any(r.team == "Lyon" for r in shown):
+    shown.append(next(r for r in uel.itertuples() if r.team == "Lyon"))
+for r in shown:
+    rows.append([esc(r.team), pct(r.top8), pct(r.SF), pct(r.Final), pct(r.Winner, 1)])
+cap(r"Europa League 2026/27: probabilities from 20{,}000 simulations (OL included).")
+add(tab(rows, "lcccc", bold_rows=tuple(i + 1 for i, r in enumerate(shown) if r.team == "Lyon")))
+close = lambda df: int((df["Winner"] >= df["Winner"].max() - 0.01).sum())
+names = lambda df, k: ", ".join(esc(x) for x in df["team"].head(k))
+lyon_uel = next(r for r in uel.itertuples() if r.team == "Lyon")
+add(rf"""There is \textbf{{no clear favourite}} in either competition. In the Champions League {close(ucl)} clubs are within one point of the leader ({names(ucl, close(ucl))}), the best at {pct(ucl["Winner"].max(), 1)};
+in the Europa League the leader, {esc(uel.iloc[0].team)}, has {pct(uel.iloc[0].Winner, 1)}, followed by {esc(uel.iloc[1].team)} ({pct(uel.iloc[1].Winner, 1)}) and {esc(uel.iloc[2].team)} ({pct(uel.iloc[2].Winner, 1)}), and OL has {pct(lyon_uel.Winner, 1)}.
+These models are validated match by match, not on whole tournaments; the knockout bracket is approximate; {eu['n_assumed']} Champions League clubs and {el['n_assumed']} Europa League clubs are not in the squad-value data and are assumed weak.""")
 
 # ------------------------------------------------------------------ 14 Limits, 15 Conclusion
 add(r"\section{Limitations}")
@@ -407,14 +453,14 @@ add(r"""\begin{itemize}
 \item The bookmaker benchmark uses Bet365 pre-match prices with a simple margin removal.
 \item Few validation windows; the SVM is under-tuned; online updating was tested for the linear model only.
 \item Simulation: intervals are too narrow in the backtest, UEFA places are assumptions, and strength is constant apart from a random shock.
-\item Team state excludes the results of 23--25 October 2026, not yet in the data source.
+\item Wikipedia lags: @UCLMISS@ Champions League matches played before the snapshot are not recorded there yet, and are simulated.
 \end{itemize}""")
 add(r"\section{Conclusion}")
 add(rf"""On public data, football results can be forecast with \emph{{well-calibrated probabilities that are only modestly sharper than team strength alone}}. Elo and squad value explain most of what is predictable.
 The chosen model, a regularised multinomial logistic regression, is as good as boosting and neural networks: complexity did not pay. The models cannot beat the betting market and add no information to it,
-which is consistent with an efficient market. For OL, the model sees a top-five squad with results slightly ahead of its shot volume: about {ol[0]:.1f} points, an average finish of {ol[3]:.1f} and a coin-flip chance of the top four.
+which is consistent with an efficient market. For OL, the model sees the {WORDS[int(profile.loc["Squad value: total", "rank"])]} most valuable squad of Ligue 1 and a middling start: about {ol[0]:.1f} points, an average finish of {ol[3]:.1f} and a {pct(ol[5])} chance of a Champions League place.
 So the disclaimer at the beginning stands: I really hope the ML is wrong.""")
-add(r"""\textbf{Reproducibility.} Code, tests (including the leakage test) and the interactive website are in the repository; \texttt{make pipeline} rebuilds data, variables, OL predictions and simulations. All numbers come from \texttt{reports/tables/}.""")
+add(r"""\textbf{Reproducibility.} Code, tests (including the leakage test) and the interactive website are in the repository; \texttt{make weekly} refreshes the data, the variables, the OL predictions, the simulations and the website. All numbers come from \texttt{reports/tables/}.""")
 
 REFS = r"""
 \begin{thebibliography}{9}\small
@@ -429,6 +475,14 @@ REFS = r"""
 
 def main() -> None:
     tex = PRE + TITLE + "\n\n".join(BODY) + REFS + "\n\\end{document}\n"
+    tokens = {"@N_ALL@": th(len(matches)), "@N_OL@": str(int(((matches["home"] == "Lyon") | (matches["away"] == "Lyon")).sum())),
+              "@N_CLUBS@": str(len(set(matches["home"]) | set(matches["away"]))), "@N_TEST@": th(prev["n_total"]),
+              "@ASOF@": fd(AS_OF), "@THROUGH@": fd(THROUGH), "@ROUNDSN@": str(ROUNDS), "@ROUNDSW@": NUM.get(ROUNDS, str(ROUNDS)),
+              "@WBEST@": f"{pool.loc[LR, 'weight_best_in_sample_on_test']:.2f}", "@POOLED@": f"{pool.loc[LR, 'pooled_log_loss']:.4f}",
+              "@MARKET@": f"{pool.loc[LR, 'market_log_loss']:.4f}", "@UCLMISS@": str(D["europe"]["ucl"]["missing"])}
+    for k, v in tokens.items():
+        tex = tex.replace(k, v)
+    assert "@" not in re.sub(r"\\texttt\{[^}]*\}", "", tex).replace("\\bibitem", ""), "unreplaced token"
     tex = tex.replace(r"\section{Introduction}", r"\section{Introduction}", 1)
     OUT.write_text(tex, encoding="utf8")
     for _ in range(2):

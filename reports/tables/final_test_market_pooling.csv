@@ -1,3 +1,3 @@
 model,weight_chosen_on_validation,pooled_log_loss,market_log_loss,diff_vs_market,ci_low,ci_high,significant,weight_best_in_sample_on_test
-LogReg (final),0.15,0.9663,0.9658,0.0005,-0.0001,0.0011,False,0.0
-Ensemble LogReg+GB+MLP,0.15,0.9664,0.9658,0.0006,0.0,0.0011,True,0.0
+LogReg (final),0.15,0.9664,0.9659,0.0005,-0.0001,0.0011,False,0.0
+Ensemble LogReg+GB+MLP,0.15,0.9664,0.9659,0.0006,0.0,0.0011,True,0.0

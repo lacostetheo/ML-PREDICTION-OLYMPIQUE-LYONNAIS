@@ -1,22 +1,22 @@
 model,vs,diff,ci_low,ci_high,significant
-Class frequency (naive),LogReg (final),0.0961,0.0868,0.1056,True
-Class frequency (naive),Elo (LogReg),0.0865,0.0776,0.0958,True
-Class frequency (naive),Bookmaker Bet365 (reference),0.1095,0.1002,0.1189,True
-Elo (LogReg),LogReg (final),0.0095,0.0056,0.0135,True
-Elo (LogReg),Bookmaker Bet365 (reference),0.023,0.0188,0.0271,True
-Poisson goals,LogReg (final),0.0109,0.0071,0.0147,True
-Poisson goals,Elo (LogReg),0.0014,-0.0006,0.0035,False
-Poisson goals,Bookmaker Bet365 (reference),0.0244,0.0205,0.0282,True
-LogReg (final),Elo (LogReg),-0.0095,-0.0135,-0.0056,True
-LogReg (final),Bookmaker Bet365 (reference),0.0135,0.0094,0.0175,True
+Class frequency (naive),LogReg (final),0.096,0.0869,0.1051,True
+Class frequency (naive),Elo (LogReg),0.0862,0.0775,0.0952,True
+Class frequency (naive),Bookmaker Bet365 (reference),0.1095,0.1001,0.1186,True
+Elo (LogReg),LogReg (final),0.0098,0.006,0.0137,True
+Elo (LogReg),Bookmaker Bet365 (reference),0.0234,0.0191,0.0277,True
+Poisson goals,LogReg (final),0.0113,0.0075,0.0151,True
+Poisson goals,Elo (LogReg),0.0015,-0.0006,0.0035,False
+Poisson goals,Bookmaker Bet365 (reference),0.0248,0.0208,0.0288,True
+LogReg (final),Elo (LogReg),-0.0098,-0.0137,-0.006,True
+LogReg (final),Bookmaker Bet365 (reference),0.0136,0.0093,0.0178,True
 Gradient boosting,LogReg (final),-0.0007,-0.0032,0.0018,False
-Gradient boosting,Elo (LogReg),-0.0102,-0.0138,-0.0065,True
-Gradient boosting,Bookmaker Bet365 (reference),0.0128,0.0089,0.0167,True
-MLP deep (5 seeds),LogReg (final),0.0003,-0.0016,0.0022,False
-MLP deep (5 seeds),Elo (LogReg),-0.0092,-0.0131,-0.0056,True
-MLP deep (5 seeds),Bookmaker Bet365 (reference),0.0138,0.0098,0.0177,True
-Ensemble LogReg+GB+MLP,LogReg (final),-0.0014,-0.0027,-0.0001,True
-Ensemble LogReg+GB+MLP,Elo (LogReg),-0.0109,-0.0146,-0.0074,True
-Ensemble LogReg+GB+MLP,Bookmaker Bet365 (reference),0.0121,0.0083,0.0159,True
-Bookmaker Bet365 (reference),LogReg (final),-0.0135,-0.0175,-0.0094,True
-Bookmaker Bet365 (reference),Elo (LogReg),-0.023,-0.0271,-0.0188,True
+Gradient boosting,Elo (LogReg),-0.0105,-0.0142,-0.007,True
+Gradient boosting,Bookmaker Bet365 (reference),0.0128,0.0089,0.0168,True
+MLP deep (5 seeds),LogReg (final),0.0005,-0.0013,0.0024,False
+MLP deep (5 seeds),Elo (LogReg),-0.0093,-0.013,-0.0058,True
+MLP deep (5 seeds),Bookmaker Bet365 (reference),0.0141,0.0099,0.0182,True
+Ensemble LogReg+GB+MLP,LogReg (final),-0.0014,-0.0027,-0.0,True
+Ensemble LogReg+GB+MLP,Elo (LogReg),-0.0111,-0.0146,-0.0077,True
+Ensemble LogReg+GB+MLP,Bookmaker Bet365 (reference),0.0122,0.0084,0.016,True
+Bookmaker Bet365 (reference),LogReg (final),-0.0136,-0.0178,-0.0093,True
+Bookmaker Bet365 (reference),Elo (LogReg),-0.0234,-0.0277,-0.0191,True

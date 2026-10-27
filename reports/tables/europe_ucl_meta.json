@@ -1,26 +1,27 @@
 {
  "played": 29,
  "total": 144,
+ "n_assumed": 3,
  "sensitivity_title": {
   "0.0": {
-   "Barcelona": 0.1394,
-   "Manchester City": 0.136,
-   "Paris Saint-Germain": 0.131,
-   "Arsenal": 0.1306,
-   "Real Madrid": 0.1212,
-   "Bayern Munich": 0.0992,
-   "Liverpool": 0.0694,
-   "Inter Milan": 0.0266
+   "Arsenal": 0.1406,
+   "Paris Saint-Germain": 0.1356,
+   "Real Madrid": 0.1352,
+   "Manchester City": 0.126,
+   "Barcelona": 0.1222,
+   "Bayern Munich": 0.1042,
+   "Liverpool": 0.058,
+   "Inter Milan": 0.0298
   },
   "0.3": {
-   "Manchester City": 0.1394,
-   "Barcelona": 0.1306,
-   "Arsenal": 0.1264,
-   "Paris Saint-Germain": 0.1244,
-   "Real Madrid": 0.1166,
-   "Bayern Munich": 0.0892,
-   "Liverpool": 0.0614,
-   "Inter Milan": 0.0342
+   "Arsenal": 0.144,
+   "Paris Saint-Germain": 0.137,
+   "Manchester City": 0.1234,
+   "Barcelona": 0.1192,
+   "Real Madrid": 0.1182,
+   "Bayern Munich": 0.0958,
+   "Liverpool": 0.0558,
+   "Inter Milan": 0.0336
   }
  }
 }

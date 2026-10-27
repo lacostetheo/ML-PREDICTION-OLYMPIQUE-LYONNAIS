@@ -1,408 +1,370 @@
-/* OL·LAB — front end. No ML runs here: every number comes from the Python pipeline (site/data.js). */
+/* OL·LAB — front end. Nothing is computed by a model here: every number comes from the Python pipeline (data.js). */
 (() => {
   "use strict";
   const D = window.OLDATA;
+  const FOCUS = "Lyon";                       // the case study: always drawn in the accent colour
+  const LEAGUES = ["F1", "E0", "SP1", "I1", "D1"];
+  const COMPS = [...LEAGUES, "ucl", "uel"];
+  const INK = "#16181D", INK3 = "#626672", GRAY = "#CFCBC0", MID = "#8E919B", ACCENT = "#C8321E", RULE = "#DDD9CE", PAPER = "#FBF9F4";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const S = { league: "F1", team: "Lyon", tab: "home", opp: null, venue: "home", custom: {} };
-  const C = { blue: "#2f5d8c", indigo: "#1f2933", navy: "#1f2933", cyan: "#2f5d8c", green: "#2e7d4f", coral: "#b4443c", amber: "#a8741a", yellow: "#a8741a",
-    violet: "#5b6b7c", grey: "#9aa3ad", muted: "#77808a", grid: "#e1e1db", ink: "#1d242c", draw: "#c9ccd0" };
-  const LEAGUE_ORDER = ["E0", "SP1", "I1", "D1", "F1"];
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const nm = (t) => esc(D.display[t] || t);
+  const isLeague = (c) => Object.prototype.hasOwnProperty.call(D.leagues, c);
+  const compName = (c) => (isLeague(c) ? D.leagues[c].name : D.europe[c].name);
+  const pc = (x, d = 0) => (100 * x).toFixed(d) + "%";
+  const pr = (x) => Math.round(100 * x);
+  const ORD = ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth",
+    "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth"];
+  const ordWord = (n) => ORD[n] || n + "th";
+  const ordNum = (n) => n + (["th", "st", "nd", "rd"][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]);
+  const dt = (s) => new Date(s + "T12:00:00");
+  const fm = (s, o) => dt(s).toLocaleDateString("en-GB", o);
+  const dDay = (s) => fm(s, { day: "numeric", month: "short" });
+  const dLong = (s) => fm(s, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dHead = (s) => fm(s, { weekday: "long", day: "numeric", month: "long" });
+  const daysBetween = (a, b) => Math.round((dt(b) - dt(a)) / 864e5);
+  const leagueOf = (team) => LEAGUES.find((L) => D.leagues[L].teams.includes(team));
+  const fixturesOf = (c) => (isLeague(c) ? D.fixtures[c] : D.europe[c].fixtures);
+  const cmpFx = (x, y) => (x.d + (x.t || "99")).localeCompare(y.d + (y.t || "99"));
+  const teamFixtures = (team) => COMPS.flatMap((c) => fixturesOf(c).filter((m) => m.h === team || m.a === team).map((m) => ({ ...m, comp: c }))).sort(cmpFx);
+  const showTime = (m) => m.t && daysBetween(D.as_of, m.d) <= 10;       // later kick-off times are placeholders
+  const euroOf = (team) => ["ucl", "uel"].map((c) => ({ comp: c, row: D.europe[c].teams.find((x) => x.k === team) })).find((x) => x.row);
+  const pt = (x) => (x < 0.005 ? "–" : pc(x));                      // tables: a dash instead of a meaningless 0%
+  const pw = (x) => (x < 0.0005 ? "&lt;0.1%" : pc(x, 1));
+  const isRight = (r) => r[7].indexOf(Math.max(...r[7])) === r[6];
+  const S = { page: null, comp: "F1", round: {}, mteam: "", rlg: "" };
+  const charts = [];
 
-  const pct = (x) => Math.round(x * 100) + "%";
-  const pct1 = (x) => (x * 100).toFixed(1) + "%";
-  const range = (ci) => `${Math.round(ci[0] * 100)}–${Math.round(ci[1] * 100)}%`;
-  const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]);
-  const fmtDate = (d, t) => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) + (t ? " · " + t : "");
-  const teams = () => D.leagues[S.league].teams;
-  const info = () => D.leagues[S.league].info[S.team];
-  const sumOf = (L, t) => D.leagues[L].sim.summary[t]; // [exp_pts,p10,p90,exp_pos,title,cl,top4,top6,europe,rel,pts_now,played]
-
-  /* arr layout of a pair: [pA,pD,pH, A_lo,A_hi, D_lo,D_hi, H_lo,H_hi, contrib x8, eloDiff] */
-  function persp(home, team, arr) {
-    const h = home === team;
-    return { win: h ? arr[2] : arr[0], draw: arr[1], loss: h ? arr[0] : arr[2],
-      winCI: h ? [arr[7], arr[8]] : [arr[3], arr[4]], drawCI: [arr[5], arr[6]], lossCI: h ? [arr[3], arr[4]] : [arr[7], arr[8]],
-      ep: 3 * (h ? arr[2] : arr[0]) + arr[1] };
+  /* ------------------------------------------------------------------ small components */
+  function split3(p) {                                         // p = [away, draw, home]
+    const [a, d, h] = p, max = Math.max(a, d, h);
+    return { h, d, a, fav: max === h ? "h" : max === a ? "a" : "d" };
   }
-  function pbar(p, big, labels) {
-    const seg = (cls, v, t) => `<div class="seg ${cls}" style="--w:${(v * 100).toFixed(2)}%" title="${t} ${pct1(v)}">${v > 0.07 ? pct(v) : ""}</div>`;
-    return `<div class="pbar ${big ? "big" : ""}">${seg("win", p.win, "win")}${seg("draw", p.draw, "draw")}${seg("loss", p.loss, "loss")}</div>` +
-      (labels ? `<div class="plegend"><span><i style="background:${C.blue}"></i>${labels[0]} wins</span><span><i style="background:${C.draw}"></i>Draw</span><span><i style="background:${C.coral}"></i>${labels[1]} wins</span></div>` : "");
+  function p3(m, focus) {
+    const { h, d, a, fav } = split3(m.p);
+    const sh = m.h === focus ? "sx" : fav === "h" ? "sf" : "so", sa = m.a === focus ? "sx" : fav === "a" ? "sf" : "so", sdr = fav === "d" ? "sf" : "sd";
+    return `<span class="p3"><span class="nums"><span class="${fav === "h" ? "fav" : ""}">${pr(h)}%</span><span class="${fav === "d" ? "fav" : ""}">${pr(d)}%</span><span class="${fav === "a" ? "fav" : ""}">${pr(a)}%</span></span>` +
+      `<span class="seg"><i class="${sh}" style="width:${(h * 100).toFixed(1)}%"></i><i class="${sdr}" style="width:${(d * 100).toFixed(1)}%"></i><i class="${sa}" style="width:${(a * 100).toFixed(1)}%"></i></span></span>`;
   }
-  function lightUp(root) { const on = () => $$(".pbar", root).forEach((b) => b.classList.add("on")); REDUCED ? on() : requestAnimationFrame(() => requestAnimationFrame(on)); }
-  function goTo(league, team, tab) { S.league = league; S.team = team; $("#league").value = league; fillTeams(); resetMatchDefaults(); showTab(tab || "lab"); window.scrollTo(0, 0); }
-
-  /* ------------------------------------------------------------------ pickers */
-  function fillLeagues() {
-    $("#league").innerHTML = Object.entries(D.leagues).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join("");
-    $("#league").value = S.league;
+  function fxRow(m, o = {}) {
+    const focus = o.focus || FOCUS, comp = m.comp || o.comp, { fav } = split3(m.p);
+    const time = m.late ? `<span class="late">Postponed</span>` : (showTime(m) ? m.t : "");
+    const when = o.dated ? `<b>${fm(m.d, { weekday: "short", day: "numeric", month: "short" })}</b>${time ? " · " + time : ""} · ${esc(compName(comp))}` : time;
+    const inner = `<span class="when">${when}</span><span class="teams"><span class="t ${fav === "h" ? "fav" : ""}">${nm(m.h)}</span><span class="t ${fav === "a" ? "fav" : ""}">${nm(m.a)}</span></span>${p3(m, focus)}`;
+    if (o.expand !== false && isLeague(comp)) {
+      return `<li><button class="fx" aria-expanded="false" data-k="${esc(comp + "|" + m.h + "|" + m.a)}">${inner}</button><div class="detail" hidden></div></li>`;
+    }
+    return `<li><div class="fx" style="cursor:default">${inner}</div></li>`;
   }
-  function fillTeams() { $("#team").innerHTML = teams().map((t) => `<option>${t}</option>`).join(""); $("#team").value = S.team; }
-  function resetMatchDefaults() {
-    const up = S.league === "F1" ? (D.calendar_f1[S.team] || [])[0] : null, nx = up || D.next[S.league][S.team];
-    S.opp = nx.home === S.team ? nx.away : nx.home;
-    S.venue = nx.home === S.team ? "home" : "away";
+  function detail(key) {
+    const [c, h, a] = key.split("|"), v = D.pairs[c][`${h}|${a}`], lg = D.leagues[c], ih = lg.info[h], ia = lg.info[a];
+    const contrib = v.slice(9, 17), elo = v[17], net = contrib.reduce((s, x) => s + x, 0);
+    const mx = Math.max(0.5, ...contrib.map(Math.abs), Math.abs(net));
+    const bar = (x) => (x >= 0 ? `<i style="left:50%;width:${(x / mx * 50).toFixed(1)}%"></i>` : `<i class="neg" style="right:50%;width:${(-x / mx * 50).toFixed(1)}%"></i>`);
+    const sg = (x) => (Math.abs(x) < 0.005 ? "0.00" : (x > 0 ? "+" : "") + x.toFixed(2));
+    const order = D.families.map((f, i) => ({ f, x: contrib[i] })).sort((p, q) => Math.abs(q.x) - Math.abs(p.x));
+    const why = order.map((o) => `<span>${esc(o.f)}</span><span class="tr">${bar(o.x)}</span><span class="v">${sg(o.x)}</span>`).join("") +
+      `<span class="tot">Net push</span><span class="tr">${bar(net)}</span><span class="v tot">${sg(net)}</span>`;
+    const sv = (i) => (i.sv === null ? "n/a" : "×" + Math.exp(i.sv).toFixed(2));
+    const mk = (D.fixtures[c].find((m) => m.h === h && m.a === a) || {}).mk;
+    return `<div class="in"><div><h3>Why this forecast</h3><div class="why">${why}</div>
+      <p class="small" style="margin:12px 0 0">Bars to the right favour ${nm(h)}, to the left ${nm(a)}.</p></div>
+      <div><h3>The two teams</h3><table><thead><tr><th></th><th class="r">${nm(h)}</th><th class="r">${nm(a)}</th></tr></thead><tbody>
+        <tr><td>Elo rating</td><td class="r">${Math.round(ih.elo).toLocaleString("en-GB")}</td><td class="r">${Math.round(ia.elo).toLocaleString("en-GB")}</td></tr>
+        <tr><td>Points, last 10</td><td class="r">${ih.pts10.toFixed(1)}</td><td class="r">${ia.pts10.toFixed(1)}</td></tr>
+        <tr><td>Goals, last 10</td><td class="r">${ih.gf10.toFixed(1)}–${ih.ga10.toFixed(1)}</td><td class="r">${ia.gf10.toFixed(1)}–${ia.ga10.toFixed(1)}</td></tr>
+        <tr><td>Squad value</td><td class="r">${sv(ih)}</td><td class="r">${sv(ia)}</td></tr></tbody></table>
+      <p class="small" style="margin:14px 0 0">90% range for a ${nm(h)} win: ${pr(v[7])}–${pr(v[8])}%.${mk ? ` Bookmaker: ${pr(mk[2])} · ${pr(mk[1])} · ${pr(mk[0])}.` : ""}</p></div></div>`;
   }
-
-  /* ------------------------------------------------------------------ DASHBOARD */
-  const ICON = {
-    chart: '<svg viewBox="0 0 24 24"><path d="M4 20V10h3.5v10zm6.25 0V4h3.5v16zM16.5 20v-7H20v7z"/></svg>',
-    target: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>',
-    ball: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5l3.5 2.5-1.3 4h-4.4l-1.3-4zM5 9l2 .6M19 9l-2 .6"/></svg>',
-    pie: '<svg viewBox="0 0 24 24"><path d="M11 3a9 9 0 1 0 10 10h-10zM13 2v9h9A9 9 0 0 0 13 2z"/></svg>',
-  };
-  function wave(series, w = 220, h = 56) {
-    const v = series.filter((x) => x !== null).slice(-70); if (v.length < 3) return "";
-    const lo = Math.min(...v), hi = Math.max(...v), X = (i) => (i / (v.length - 1)) * w, Y = (x) => h - 6 - ((x - lo) / (hi - lo || 1)) * (h - 18);
-    let d = `M0,${h} `; v.forEach((x, i) => (d += `L${X(i).toFixed(1)},${Y(x).toFixed(1)} `)); d += `L${w},${h} Z`;
-    let ln = ""; v.forEach((x, i) => (ln += `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(x).toFixed(1)} `));
-    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d}" fill="rgba(255,255,255,.16)"/><path d="${ln}" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
-  }
-  function top3(L) {
-    const rows = Object.entries(D.leagues[L].sim.summary).sort((a, b) => a[1][3] - b[1][3]).slice(0, 3);
-    return rows.map(([t, s]) => ({ t, s, p3: D.leagues[L].sim.pos_probs[t].slice(0, 3).reduce((a, b) => a + b, 0) }));
-  }
-  function renderHome() {
-    $("#asof").textContent = `Snapshot ${D.as_of} · 10,000 simulated seasons per league · walk-forward logistic regression`;
-    const fin = D.arena.final["LogReg (final)"], bk = D.arena.final["Bookmaker Bet365 (reference)"];
-    const ol = sumOf("F1", "Lyon"), olp = D.leagues.F1.sim.pos_probs.Lyon, gap = fin.log_loss - bk.log_loss;
-    const mx = Math.max(...olp);
-    $("#kpis").innerHTML = `
-      <div class="card"><div class="kpi"><div><div class="val">29,239</div><div class="lab">Matches analysed</div></div></div><div class="foot flat">5 leagues · 2010 → 2026</div></div>
-      <div class="card"><div class="kpi"><div><div class="val">${fin.log_loss.toFixed(3)}</div><div class="lab">Test log loss (lower = better)</div></div></div><div class="foot down">${gap.toFixed(3)} behind the bookmaker (${bk.log_loss.toFixed(3)})</div></div>
-      <div class="card"><div class="kpi"><div><div class="val">${ol[0].toFixed(1)}</div><div class="lab">OL expected points · Ligue 1</div></div></div><div class="foot up">80 % interval ${Math.round(ol[1])}–${Math.round(ol[2])}</div></div>
-      <div class="card"><div class="kpi"><div><div class="val">${pct(ol[6])}</div><div class="lab">OL chance of top 4</div></div></div>
-        <div class="minibars" aria-hidden="true">${olp.map((v) => `<i style="height:${Math.max(6, v / mx * 100)}%"></i>`).join("")}</div></div>`;
-
-    $("#top3").innerHTML = LEAGUE_ORDER.map((L, i) => {
-      const r = top3(L), champ = r[0];
-      return `<article class="card lg c${i}"><div class="head"><div class="lname">${D.leagues[L].name}</div><div class="champ">${champ.t}</div>
-        <div class="cprob">Projected champion · title ${pct(champ.s[4])}</div></div>
-        <div class="body">${r.map((x, k) => `<div class="row" data-go="${L}|${x.t}"><span class="medal">${k + 1}</span><div class="tn">${x.t}<span class="ts">${x.s[0].toFixed(0)} pts · title ${pct(x.s[4])}</span></div><span class="pill" title="chance of a top-3 finish">${pct(x.p3)}</span></div>`).join("")}</div></article>`;
-    }).join("");
-
-    // title race of the selected league
-    const lg = D.leagues[S.league], rows = Object.entries(lg.sim.summary).sort((a, b) => a[1][3] - b[1][3]).slice(0, 8);
-    $("#race-title").innerHTML = `Title race — ${lg.name} <span class="chip">top 8 by expected position</span>`;
-    const W = 720, H = 250, ml = 38, mb = 52, mt = 10, bw = (W - ml - 8) / rows.length;
-    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Title and top-4 probabilities">`;
-    for (let g = 0; g <= 4; g++) { const y = mt + (H - mt - mb) * (1 - g / 4); svg += `<line x1="${ml}" x2="${W - 8}" y1="${y}" y2="${y}" stroke="${C.grid}"/><text x="${ml - 6}" y="${y + 3}" fill="${C.muted}" font-size="10" text-anchor="end">${g * 25}</text>`; }
-    rows.forEach(([t, s], i) => {
-      const x0 = ml + i * bw + bw * 0.18, w = bw * 0.30, Y = (v) => mt + (H - mt - mb) * (1 - v);
-      svg += `<rect x="${x0}" y="${Y(s[4])}" width="${w}" height="${H - mb - Y(s[4])}" rx="3" fill="${C.blue}" opacity=".6"><title>${t}: title ${pct1(s[4])}</title></rect>`;
-      svg += `<rect x="${x0 + w + 3}" y="${Y(s[6])}" width="${w}" height="${H - mb - Y(s[6])}" rx="3" fill="${C.indigo}"><title>${t}: top 4 ${pct1(s[6])}</title></rect>`;
-      svg += `<text x="${x0 + w}" y="${H - mb + 16}" fill="${C.ink}" font-size="10.5" text-anchor="middle" font-weight="600">${t.length > 11 ? t.slice(0, 10) + "…" : t}</text>`;
+  function dotGrid(rows, cols = 14, r = 8, gap = 10) {
+    const n = rows.length, nr = Math.ceil(n / cols), W = Math.min(n, cols) * (2 * r + gap) - gap + 4, H = nr * (2 * r + gap) - gap + 4;
+    const right = rows.filter(isRight).length;
+    let s = `<svg class="dotgrid" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${right} of ${n} results called right">`;
+    rows.forEach((x, i) => {
+      const cx = 2 + r + (i % cols) * (2 * r + gap), cy = 2 + r + Math.floor(i / cols) * (2 * r + gap);
+      s += isRight(x) ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${INK}"/>` : `<circle cx="${cx}" cy="${cy}" r="${r - 1}" fill="none" stroke="${INK}" stroke-width="2"/>`;
     });
-    svg += `<g font-size="10.5" fill="${C.muted}"><rect x="${ml}" y="${H - 16}" width="10" height="10" rx="2" fill="${C.blue}" opacity=".6"/><text x="${ml + 15}" y="${H - 7}">win the league</text><rect x="${ml + 120}" y="${H - 16}" width="10" height="10" rx="2" fill="${C.indigo}"/><text x="${ml + 135}" y="${H - 7}">finish top 4</text><text x="${W - 8}" y="${H - 7}" text-anchor="end">probability, %</text></g></svg>`;
-    $("#race").innerHTML = svg;
+    return s + "</svg>";
+  }
+  function rangeBar(lo, ex, hi, min, max, w = 170) {
+    const X = (v) => 6 + (v - min) / (max - min) * (w - 12);
+    return `<svg class="rng" width="${w}" height="22" viewBox="0 0 ${w} 22"><line x1="${X(lo)}" x2="${X(hi)}" y1="11" y2="11" stroke="${INK}" stroke-opacity=".4" stroke-width="2"/><circle cx="${X(ex)}" cy="11" r="5" fill="${INK}" stroke="${PAPER}" stroke-width="2"/></svg>`;
+  }
+  const tabs = (items, cur, attr) => `<div class="tabs" role="tablist">${items.map(([id, label]) => `<button role="tab" aria-selected="${id === cur}" data-${attr}="${id}">${esc(label)}</button>`).join("")}</div>`;
+  const compTabs = (cur, attr) => tabs(COMPS.map((c) => [c, compName(c)]), cur, attr);
+  const head = (eyebrow, h1, stand) => `<section class="head"><p class="eyebrow">${eyebrow}</p><h1>${h1}</h1>${stand ? `<p class="stand">${stand}</p>` : ""}</section>`;
 
-    // upcoming round of the selected league
-    const seen = new Set(), fx = [];
-    Object.values(D.next[S.league]).forEach((m) => { const k = m.home + "|" + m.away; if (!seen.has(k)) { seen.add(k); fx.push(m); } });
-    fx.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-    $("#up-day").textContent = `${lg.name} · ${fmtDate(fx[0].date)} → ${fmtDate(fx[fx.length - 1].date)}`;
-    $("#upcoming").innerHTML = fx.map((m) => {
-      const [a, d, h] = m.p, best = h >= a && h >= d ? "u" : a >= d ? "d" : "n";
-      return `<div class="up-item" data-go="${S.league}|${m.home}"><div class="up-ico ${best}">${best === "u" ? "↑" : best === "d" ? "↓" : "="}</div><div><div class="ut">${m.home} vs ${m.away}</div><div class="us">${pct(h)} / ${pct(d)} / ${pct(a)} · ${fmtDate(m.date)}</div></div></div>`;
-    }).join("");
-
-    // Europe: qualification odds from the domestic simulations
-    const all = [];
-    LEAGUE_ORDER.forEach((L) => Object.entries(D.leagues[L].sim.summary).forEach(([t, s]) => all.push({ L, t, cl: s[5], eu: Math.max(0, s[8] - s[5]) })));
-    const bar = (v, c) => `<span class="cellbar" style="width:${Math.round(v * 70)}px;background:${c}"></span>${pct(v)}`;
-    const tbl = (rows, key, color) => `<table><thead><tr><th>Team</th><th>League</th><th>Probability</th></tr></thead><tbody>${rows.map((r) => `<tr data-go="${r.L}|${r.t}" style="cursor:pointer"><td>${r.t}</td><td>${D.leagues[r.L].name}</td><td class="num">${bar(r[key], color)}</td></tr>`).join("")}</tbody></table>`;
-    const U = OLDATA.ucl;
-    if (U) {
-      const pc = (v) => (v * 100).toFixed(v < 0.1 ? 1 : 0) + " %";
-      $("#ucl-win").innerHTML = `<table><thead><tr><th>Club</th><th>Top 8</th><th>Semi</th><th>Final</th><th>Winner</th></tr></thead><tbody>` +
-        U.rows.map((r) => `<tr><td>${r.team}</td><td>${pc(r.top8)}</td><td>${pc(r.SF)}</td><td>${pc(r.Final)}</td><td><b>${pc(r.Winner)}</b></td></tr>`).join("") + `</tbody></table>`;
-      $("#ucl-note").textContent = `${U.played} of ${U.total} league-phase matches in the data. No clear favourite: the six leading clubs are within a few points of each other.`;
-    }
-    $("#ucl").innerHTML = tbl([...all].sort((a, b) => b.cl - a.cl).slice(0, 14), "cl", C.blue);
-    $("#uel").innerHTML = tbl([...all].sort((a, b) => b.eu - a.eu).slice(0, 14), "eu", C.grey);
-  }
-
-  /* ------------------------------------------------------------------ PREVIOUS RESULTS */
-  function renderPrev() {
-    const P = D.prev, NAMES = ["Away win", "Draw", "Home win"];
-    $("#prev-asof").textContent = `Matches up to ${fmtDate(P.last)}`;
-    $("#prev-kpis").innerHTML = Object.entries(P.summary).map(([k, v]) => `<div class="card"><div class="lab" style="color:var(--muted);font-size:12.5px">${k}</div>
-      <div class="kpi"><div class="val">${(v.acc * 100).toFixed(0)}%</div></div><div class="lab" style="font-size:12.5px">correct outcome · ${v.n} matches</div>
-      <div class="foot flat" style="font-size:12px;margin-top:8px">Log loss: model <b>${v.ll.toFixed(3)}</b> · bookmaker ${v.ll_book.toFixed(3)} · no-skill ${v.ll_naive.toFixed(3)}</div></div>`).join("");
-    $("#prev-cal").innerHTML = `<table><thead><tr><th>Model's top pick said</th><th>Matches</th><th>Average said</th><th>Came true</th></tr></thead><tbody>` +
-      P.calibration.map((b) => `<tr><td>${b.lo ? Math.round(b.lo * 100) : 0}–${Math.round(b.hi * 100)}%</td><td class="num">${b.n}</td><td class="num">${pct(b.said)}</td><td class="num">${pct(b.came_true)}</td></tr>`).join("") + `</tbody></table>`;
-    const sel = $("#prev-league");
-    if (!sel.options.length) { sel.innerHTML = `<option value="">All leagues</option>` + LEAGUE_ORDER.map((L) => `<option value="${L}">${D.leagues[L].name}</option>`).join(""); sel.addEventListener("change", renderPrev); }
-    const L = sel.value, rows = P.rows.filter((r) => !L || r[1] === L).slice(0, 80);
-    $("#prev-table").innerHTML = `<table><thead><tr><th>Date</th><th>Match</th><th>Score</th><th>Forecast: home / draw / away</th><th>Top pick</th><th>Result</th></tr></thead><tbody>` +
-      rows.map(([d, lg, h, a, hg, ag, y, p]) => {
-        const best = p.indexOf(Math.max(...p)), ok = best === y, said = p[y];
-        const upset = !ok && said < 0.2 ? ` <span style="color:var(--muted);font-weight:400">(rated ${pct(said)})</span>` : "";
-        return `<tr><td class="num">${d.slice(5)}</td><td>${h} – ${a}</td><td class="num"><b>${hg}–${ag}</b></td><td class="num">${pct(p[2])} / ${pct(p[1])} / ${pct(p[0])}</td><td class="pk">${NAMES[best]} ${pct(p[best])}</td><td class="${ok ? "ok" : "ko"}">${ok ? "Right" : "Wrong"}${upset}</td></tr>`;
-      }).join("") + `</tbody></table>`;
-  }
-
-  /* ------------------------------------------------------------------ MATCH LAB */
-  function renderTeamCard() {
-    const i = info(), n = teams().length, sv = i.sv === null ? "n/a" : "×" + Math.exp(i.sv).toFixed(2);
-    $("#teamcard").innerHTML = `<div class="name">${S.team}</div><div class="sub">${D.leagues[S.league].name} · snapshot ${D.as_of}</div>
-      <div class="stats">
-        <div class="stat"><b>${Math.round(i.elo)}</b><span>Elo · ${ord(i.elo_rank)}/${n}</span></div>
-        <div class="stat"><b>${sv}</b><span>Squad value vs league avg</span></div>
-        <div class="stat"><b>${i.pts10.toFixed(2)}</b><span>Points / match (last 10)</span></div>
-        <div class="stat"><b>${i.gf10.toFixed(1)}–${i.ga10.toFixed(1)}</b><span>Goals for–against / match</span></div>
-      </div><canvas id="spark" height="90" aria-label="Elo rating history"></canvas><div class="note">Elo rating since 2010 (monthly)</div>`;
-    drawSpark(i.elo_series);
-  }
-  function drawSpark(series) {
-    const cv = $("#spark"); if (!cv) return;
-    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = 90;
-    cv.width = w * dpr; cv.height = h * dpr; const g = cv.getContext("2d"); g.scale(dpr, dpr);
-    const vals = series.filter((v) => v !== null); if (!vals.length) return;
-    const lo = Math.min(...vals) - 20, hi = Math.max(...vals) + 20;
-    const X = (k) => 6 + (k / (series.length - 1)) * (w - 12), Y = (v) => h - 8 - ((v - lo) / (hi - lo)) * (h - 20);
-    g.strokeStyle = C.grid; g.lineWidth = 1; [lo + 20, (lo + hi) / 2, hi - 20].forEach((v) => { g.beginPath(); g.moveTo(0, Y(v)); g.lineTo(w, Y(v)); g.stroke(); });
-    const grad = g.createLinearGradient(0, 0, w, 0); grad.addColorStop(0, C.blue); grad.addColorStop(1, C.violet);
-    g.strokeStyle = grad; g.lineWidth = 2; g.lineJoin = "round"; g.beginPath(); let pen = false;
-    series.forEach((v, k) => { if (v === null) { pen = false; return; } pen ? g.lineTo(X(k), Y(v)) : g.moveTo(X(k), Y(v)); pen = true; });
-    g.stroke();
-    const last = series.length - 1 - [...series].reverse().findIndex((v) => v !== null);
-    g.fillStyle = C.coral; g.beginPath(); g.arc(X(last), Y(series[last]), 4, 0, 7); g.fill();
-  }
-
-  function matchCard(n, home, away, date, time, arr, market, extra, stale) {
-    const t = S.team, h = home === t, opp = h ? away : home, p = persp(home, t, arr);
-    const mk = market ? persp(home, t, [market[0], market[1], market[2], 0, 0, 0, 0, 0, 0]) : null;
-    return `<article class="mcard ${n === 1 ? "first" : ""}"><div class="meta"><span class="badge-n ${stale ? "stale" : ""}">${stale ? "ROUND PLAYED" : n === 1 ? "NEXT" : "THEN"} · #${n}</span><span>${fmtDate(date, time)}${extra || ""}</span></div>
-      <h4>${t}<span class="venue ${h ? "H" : "A"}">${h ? "H" : "A"}</span> <span class="vs">vs</span> ${opp}</h4>
-      ${pbar(p, false)}
-      <div class="mline"><span>${t} win <b>${pct(p.win)}</b> <small>(90 %: ${range(p.winCI)})</small></span><span>draw <b>${pct(p.draw)}</b></span><span>${opp} <b>${pct(p.loss)}</b></span></div>
-      <div class="mline"><span>expected points <b>${p.ep.toFixed(2)}</b></span>${mk ? `<span>bookmaker: ${pct(mk.win)} / ${pct(mk.draw)} / ${pct(mk.loss)}</span>` : ""}</div></article>`;
-  }
-  function customCard(idx) {
-    const key = S.league + "|" + S.team, c = (S.custom[key] = S.custom[key] || [{}, {}])[idx - 2];
-    const opts = teams().filter((x) => x !== S.team);
-    const head = `<article class="mcard"><div class="meta"><span class="badge-n">THEN · #${idx}</span><span>calendar not available</span></div>`;
-    const sel = `<div class="pick"><select data-c="${idx - 2}" class="c-opp" aria-label="Opponent for match ${idx}"><option value="">— choose opponent —</option>${opts.map((o) => `<option ${c.opp === o ? "selected" : ""}>${o}</option>`).join("")}</select>
-      <div class="seg-toggle"><button class="c-v ${c.venue !== "away" ? "on" : ""}" data-c="${idx - 2}" data-v="home">H</button><button class="c-v ${c.venue === "away" ? "on" : ""}" data-c="${idx - 2}" data-v="away">A</button></div></div>`;
-    if (!c.opp) return head + `<div class="empty">Only the next round is published for this league in the data source. Choose an opponent to see the forecast.</div>` + sel + `</article>`;
-    const home = c.venue === "away" ? c.opp : S.team, away = c.venue === "away" ? S.team : c.opp;
-    const arr = D.pairs[S.league][`${home}|${away}`], p = persp(home, S.team, arr);
-    return head + sel + pbar(p, false) + `<div class="mline"><span>${S.team} win <b>${pct(p.win)}</b> <small>(90 %: ${range(p.winCI)})</small></span><span>draw <b>${pct(p.draw)}</b></span><span>${c.opp} <b>${pct(p.loss)}</b></span></div>
-      <div class="mline"><span>expected points <b>${p.ep.toFixed(2)}</b></span><span>neutral schedule</span></div></article>`;
-  }
-  function renderNext3() {
-    const nx = D.next[S.league][S.team];
-    $("#next-team").textContent = S.team;
-    let html = "";
-    if (S.league === "F1") {
-      (D.calendar_f1[S.team] || []).forEach((m, k) => {
-        const real = nx.home === m.home && nx.away === m.away && nx.date === m.date;
-        html += real ? matchCard(k + 1, nx.home, nx.away, nx.date, nx.time, nx.p.concat(nx.ci), nx.market, ' · <b class="up">confirmed</b>')
-                     : matchCard(k + 1, m.home, m.away, m.date, "", D.pairs.F1[`${m.home}|${m.away}`], null, ` · matchday ${m.matchday}`);
-      });
-      $("#next3-note").textContent = "From today (" + D.as_of + ") on, per the published Ligue 1 calendar (dates can change). Only a match listed by the odds source has bookmaker prices and real rest days; later matches use a neutral schedule. The further ahead, the less today's snapshot reflects reality — Elo and form move after every match.";
-    } else {
-      const stale = nx.date < D.as_of;
-      html = matchCard(1, nx.home, nx.away, nx.date, nx.time, nx.p.concat(nx.ci), nx.market, stale ? " · played, result not in the data yet" : ' · <b class="up">confirmed</b>', stale) + customCard(2) + customCard(3);
-      $("#next3-note").textContent = "Match 1 is the fixture listed by the odds source" + (stale ? " (already played before the snapshot: this is the forecast the model would have made). " : ". ") + "For this league the calendar beyond that round is not part of the data source, so matches 2–3 are yours to choose.";
-    }
-    $("#next3").innerHTML = html; lightUp($("#next3"));
-    $$(".c-opp").forEach((s) => s.addEventListener("change", (e) => { const key = S.league + "|" + S.team; S.custom[key][+e.target.dataset.c].opp = e.target.value || undefined; renderNext3(); }));
-    $$(".c-v").forEach((b) => b.addEventListener("click", () => { const key = S.league + "|" + S.team; S.custom[key][+b.dataset.c].venue = b.dataset.v; renderNext3(); }));
-  }
-  function renderSimulator() {
-    const opts = teams().filter((x) => x !== S.team);
-    $("#opp").innerHTML = opts.map((o) => `<option>${o}</option>`).join(""); $("#opp").value = S.opp;
-    $("#v-home").classList.toggle("on", S.venue === "home"); $("#v-away").classList.toggle("on", S.venue === "away");
-    const home = S.venue === "home" ? S.team : S.opp, away = S.venue === "home" ? S.opp : S.team;
-    const arr = D.pairs[S.league][`${home}|${away}`], p = persp(home, S.team, arr), eloDiff = (S.venue === "home" ? 1 : -1) * arr[17];
-    $("#match-title").innerHTML = `${home} <small>vs</small> ${away}<br><small>${S.team} playing ${S.venue} · neutral schedule (7 days' rest each)</small>`;
-    $("#match-bar").innerHTML = pbar(p, true, [S.team, S.opp]); lightUp($("#match-bar"));
-    const nx = D.next[S.league][S.team], isNext = nx.home === home && nx.away === away;
-    const mk = isNext ? persp(home, S.team, [nx.market[0], nx.market[1], nx.market[2], 0, 0, 0, 0, 0, 0]) : null;
-    $("#match-facts").innerHTML = `<div class="stat"><b>${p.ep.toFixed(2)}</b><span>${S.team} expected points</span></div>
-      <div class="stat"><b>${range(p.winCI)}</b><span>90 % interval, ${S.team} win</span></div>
-      <div class="stat"><b>${eloDiff > 0 ? "+" : ""}${Math.round(eloDiff)}</b><span>Elo edge for ${S.team}</span></div>` +
-      (mk ? `<div class="stat" style="grid-column:1/-1"><b>${pct(mk.win)} / ${pct(mk.draw)} / ${pct(mk.loss)}</b><span>bookmaker's view of this real fixture (margin removed) — in testing the bookmaker beat our model</span></div>` : "");
-    renderWaterfall(arr);
-  }
-  function renderWaterfall(arr) {
-    const sign = S.venue === "home" ? 1 : -1;
-    const items = D.families.map((f, i) => ({ f, v: sign * arr[9 + i] })).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
-    const total = items.reduce((s, x) => s + x.v, 0), max = Math.max(0.2, ...items.map((x) => Math.abs(x.v)), Math.abs(total));
-    const row = (lab, v, cls) => `<div class="wf-row ${cls || ""}"><div class="lab">${lab}</div><div class="wf-track"><div class="wf-bar ${v >= 0 ? "pos" : "neg"}" data-w="${(Math.abs(v) / max * 49).toFixed(1)}"></div></div><div class="wf-val" style="color:${v >= 0 ? C.blue : C.coral}">${v >= 0 ? "+" : ""}${v.toFixed(2)}</div></div>`;
-    $("#waterfall").innerHTML = `<div class="wf-axis"><span>← favours ${S.opp}</span><span>favours ${S.team} →</span></div>` + items.map((x) => row(x.f, x.v)).join("") + row("<b>Net push</b>", total, "wf-total");
-    animateBars();
-  }
-  function animateBars() { $$(".wf-bar").forEach((b, i) => { b.style.width = "0"; setTimeout(() => (b.style.width = b.dataset.w + "%"), REDUCED ? 0 : 120 + i * 130); }); }
-  function renderLab() { renderTeamCard(); renderNext3(); renderSimulator(); $("#asof-lab").textContent = D.as_of; $("#asof2").textContent = D.as_of; }
-
-  /* ------------------------------------------------------------------ MONTE CARLO */
-  const MC = { cache: {}, k: 0, playing: false, raf: 0, last: -1 };
-  const SPEEDS = [1, 3, 10, 40, 150];
-  function dec(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
-  function mcData() {
-    const L = S.league;
-    if (!MC.cache[L]) { const s = D.leagues[L].sim; MC.cache[L] = { pos: dec(s.positions), pts: dec(s.points), T: s.teams.length, N: s.n_replay, teams: s.teams }; }
-    return MC.cache[L];
-  }
-  function mcReset(draw = true) {
-    cancelAnimationFrame(MC.raf); MC.playing = false; $("#mc-play").textContent = "▶ Play";
-    const d = mcData(), ti = d.teams.indexOf(S.team);
-    MC.k = 0; MC.last = -1; MC.counts = new Int32Array(d.T);
-    let lo = 255, hi = 0; for (let n = 0; n < d.N; n++) { const v = d.pts[n * d.T + ti]; if (v < lo) lo = v; if (v > hi) hi = v; }
-    MC.pmin = lo; MC.pc = new Int32Array(hi - lo + 1);
-    $("#mc-total").textContent = d.N.toLocaleString("en-GB"); $("#mc-team-lead").textContent = S.team + "'s";
-    if (draw) mcDraw();
-  }
-  function mcStep(n) {
-    const d = mcData(), ti = d.teams.indexOf(S.team);
-    for (let i = 0; i < n && MC.k < d.N; i++, MC.k++) { MC.counts[d.pos[MC.k * d.T + ti] - 1]++; MC.pc[d.pts[MC.k * d.T + ti] - MC.pmin]++; MC.last = MC.k; }
-  }
-  function mcDraw() {
-    const d = mcData(), ti = d.teams.indexOf(S.team), lg = D.leagues[S.league], T = d.T, k = Math.max(MC.k, 1);
-    $("#mc-n").textContent = MC.k.toLocaleString("en-GB");
-    const target = lg.sim.pos_probs[S.team];
-    const W = 560, H = 270, ml = 38, mb = 30, mt = 10, bw = (W - ml - 8) / T;
-    const freq = Array.from(MC.counts, (c) => c / k), ymax = Math.max(0.05, ...target, ...(MC.k > 30 ? freq : [0])) * 1.12;
-    const Y = (v) => mt + (H - mt - mb) * (1 - v / ymax), cl = lg.slots.champions_league, eu = lg.slots.europe, rel = lg.slots.relegation;
-    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Distribution of final position">`;
-    const band = (a, b, col, lab) => `<rect x="${ml + (a - 1) * bw}" y="${mt}" width="${(b - a + 1) * bw}" height="${H - mt - mb}" fill="${col}"/><text x="${ml + ((a - 1) + (b - a + 1) / 2) * bw}" y="${mt + 11}" fill="${C.muted}" font-size="9" text-anchor="middle">${lab}</text>`;
-    svg += band(1, cl, "rgba(79,155,232,.10)", "Champions L.") + band(cl + 1, eu, "rgba(124,92,255,.08)", "Europe") + band(T - rel + 1, T, "rgba(239,107,107,.12)", "Relegation");
-    for (let g = 0; g <= 4; g++) { const v = ymax * g / 4; svg += `<line x1="${ml}" x2="${W - 8}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.grid}"/><text x="${ml - 6}" y="${Y(v) + 3}" fill="${C.muted}" font-size="10" text-anchor="end">${Math.round(v * 100)}%</text>`; }
-    for (let i = 0; i < T; i++) {
-      const x = ml + i * bw + 2, w = bw - 4;
-      svg += `<rect x="${x}" y="${Y(freq[i])}" width="${w}" height="${H - mb - Y(freq[i])}" rx="3" fill="${C.blue}"/>`;
-      svg += `<rect x="${x}" y="${Y(target[i])}" width="${w}" height="${H - mb - Y(target[i])}" rx="3" fill="none" stroke="${C.amber}" stroke-width="1.6" stroke-dasharray="3 3"/>`;
-      svg += `<text x="${x + w / 2}" y="${H - 12}" fill="${C.muted}" font-size="10" text-anchor="middle">${i + 1}</text>`;
-    }
-    $("#mc-pos").innerHTML = svg + "</svg>";
-    const sum = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += MC.counts[i]; return s / k; };
-    const fin = lg.sim.summary[S.team];
-    const items = [["Title", sum(0, 1), fin[4]], ["Champions L.", sum(0, cl), fin[5]], ["Top 4", sum(0, 4), fin[6]], ["Top 6", sum(0, 6), fin[7]], ["Relegation", sum(T - rel, T), fin[9]]];
-    $("#mc-probs").innerHTML = items.map(([l, v, f]) => `<div class="stat"><b>${pct1(v)}</b><span>${l}</span><small>final: ${pct1(f)}</small></div>`).join("");
-    const n = MC.pc.length, W2 = 560, H2 = 270, bw2 = (W2 - ml - 8) / n, f2 = Array.from(MC.pc, (c) => c / k), y2 = Math.max(0.04, ...f2) * 1.12;
-    const Y2 = (v) => mt + (H2 - mt - mb) * (1 - v / y2);
-    let s2 = `<svg viewBox="0 0 ${W2} ${H2}" width="100%" role="img" aria-label="Distribution of final points">`;
-    for (let g = 0; g <= 4; g++) { const v = y2 * g / 4; s2 += `<line x1="${ml}" x2="${W2 - 8}" y1="${Y2(v)}" y2="${Y2(v)}" stroke="${C.grid}"/><text x="${ml - 6}" y="${Y2(v) + 3}" fill="${C.muted}" font-size="10" text-anchor="end">${Math.round(v * 100)}%</text>`; }
-    f2.forEach((v, i) => { s2 += `<rect x="${ml + i * bw2 + 0.5}" y="${Y2(v)}" width="${Math.max(bw2 - 1, 1)}" height="${H2 - mb - Y2(v)}" fill="${C.indigo}" opacity=".85"/>`; if (i % Math.ceil(n / 9) === 0) s2 += `<text x="${ml + i * bw2 + bw2 / 2}" y="${H2 - 12}" fill="${C.muted}" font-size="10" text-anchor="middle">${MC.pmin + i}</text>`; });
-    const mx = ml + (fin[0] - MC.pmin + 0.5) * bw2; s2 += `<line x1="${mx}" x2="${mx}" y1="${mt}" y2="${H2 - mb}" stroke="${C.amber}" stroke-width="1.6" stroke-dasharray="4 3"/><text x="${mx + 4}" y="${mt + 12}" fill="#b9770e" font-size="11">expected ${fin[0].toFixed(1)}</text></svg>`;
-    $("#mc-pts").innerHTML = s2;
-    $("#mc-pts-note").textContent = `Final-points forecast over all 10,000 simulations: ${fin[0].toFixed(1)} on average, 80 % between ${Math.round(fin[1])} and ${Math.round(fin[2])} (points now: ${fin[10]} after ${fin[11]} matches).`;
-    if (MC.last >= 0) {
-      const row = MC.last * d.T; let champ = 0; for (let i = 0; i < T; i++) if (d.pos[row + i] === 1) champ = i;
-      $("#mc-ticker").innerHTML = `simulation <b>#${(MC.last + 1).toLocaleString("en-GB")}</b> → champion <b>${d.teams[champ]}</b> · <em>${S.team}</em> finishes <b>${ord(d.pos[row + ti])}</b> with <b>${d.pts[row + ti]}</b> points`;
-    } else $("#mc-ticker").textContent = "press play to start the replay";
-  }
-  function mcLoop() {
-    if (!MC.playing) return;
-    mcStep(SPEEDS[+$("#mc-speed").value]); mcDraw();
-    if (MC.k >= mcData().N) { MC.playing = false; $("#mc-play").textContent = "▶ Replay"; return; }
-    MC.raf = requestAnimationFrame(mcLoop);
-  }
-  function renderTable() {
-    const lg = D.leagues[S.league], rows = Object.entries(lg.sim.summary).sort((a, b) => a[1][3] - b[1][3]);
-    const bar = (v, c) => `<span class="cellbar" style="width:${Math.round(v * 60)}px;background:${c}"></span>${pct1(v)}`;
-    $("#mc-table").innerHTML = `<table><thead><tr><th>Team</th><th>Pts now</th><th>Exp. pts [80 %]</th><th>Title</th><th>Champions L.</th><th>Top 4</th><th>Top 6</th><th>Relegation</th></tr></thead><tbody>` +
-      rows.map(([t, s]) => `<tr class="${t === S.team ? "sel" : ""}"><td>${t}</td><td class="num">${s[10]}/${s[11]}</td><td class="num">${s[0].toFixed(1)} [${Math.round(s[1])}–${Math.round(s[2])}]</td><td class="num">${bar(s[4], C.amber)}</td><td class="num">${bar(s[5], C.blue)}</td><td class="num">${bar(s[6], C.blue)}</td><td class="num">${bar(s[7], C.violet)}</td><td class="num">${bar(s[9], C.coral)}</td></tr>`).join("") + "</tbody></table>";
-  }
-  function renderMC() { mcReset(); renderTable(); }
-
-  /* ------------------------------------------------------------------ ARENA */
-  const MODELS = [["Class frequency (naive)", "Naive frequencies", C.grey], ["Elo (LogReg)", "Elo", C.amber], ["LogReg (final)", "Logistic regression ★", C.blue],
-    ["Gradient boosting", "Gradient boosting", C.green], ["MLP deep (5 seeds)", "Neural network", "#e0489c"], ["Ensemble LogReg+GB+MLP", "Ensemble", C.violet], ["Bookmaker Bet365 (reference)", "Bookmaker (Bet365)", C.navy]];
-  const AR = { t: 0, playing: false, raf: 0, start: 10 };
-  function arDraw() {
-    const cv = $("#ar-canvas"), a = D.arena, dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = 430;
-    cv.width = w * dpr; cv.height = h * dpr; const g = cv.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
-    const ml = 52, mr = 14, mt = 14, mb = 34, N = a.n.length, ymin = 0.925, ymax = 1.10;
-    const X = (i) => ml + ((i - AR.start) / (N - 1 - AR.start)) * (w - ml - mr), Y = (v) => mt + (h - mt - mb) * (1 - (Math.min(Math.max(v, ymin), ymax) - ymin) / (ymax - ymin));
-    g.font = "11px ui-monospace, Menlo, monospace"; g.fillStyle = C.muted; g.strokeStyle = C.grid; g.lineWidth = 1;
-    for (let v = ymin; v <= ymax + 1e-9; v += 0.025) { g.beginPath(); g.moveTo(ml, Y(v)); g.lineTo(w - mr, Y(v)); g.stroke(); g.textAlign = "right"; g.fillText(v.toFixed(3), ml - 6, Y(v) + 4); }
-    g.textAlign = "center"; let lastYear = "";
-    a.dates.forEach((d, i) => { if (i < AR.start) return; const ym = d.slice(0, 7); if ((ym.endsWith("-01") || ym.endsWith("-07")) && ym !== lastYear) { lastYear = ym; g.fillText(ym, X(i), h - 12); g.beginPath(); g.moveTo(X(i), mt); g.lineTo(X(i), h - mb); g.strokeStyle = "rgba(190,196,225,.5)"; g.stroke(); } });
-    g.save(); g.beginPath(); g.rect(ml, mt, w - ml - mr, h - mt - mb); g.clip();
-    MODELS.forEach(([key, , col]) => {
-      const ys = a.curves[key]; g.strokeStyle = col; g.lineWidth = key.startsWith("Bookmaker") ? 3.2 : key.startsWith("LogReg") ? 2.8 : 1.9; g.lineJoin = "round"; g.beginPath();
-      for (let i = AR.start; i <= AR.t; i++) i === AR.start ? g.moveTo(X(i), Y(ys[i])) : g.lineTo(X(i), Y(ys[i])); g.stroke();
-      g.fillStyle = col; g.beginPath(); g.arc(X(AR.t), Y(ys[AR.t]), 3.6, 0, 7); g.fill();
+  /* ------------------------------------------------------------------ PICKS */
+  function pickRows() {
+    const rows = LEAGUES.map((L) => {
+      const lg = D.leagues[L];
+      return { id: L, name: lg.name, sub: `after ${lg.rounds.played} of ${lg.rounds.total} rounds`, d: 0,
+        list: Object.entries(lg.sim.summary).map(([t, v]) => ({ t, p: v[4] })).sort((a, b) => b.p - a.p) };
     });
-    g.restore();
-    $("#ar-n").textContent = a.n[AR.t].toLocaleString("en-GB"); $("#ar-date").textContent = a.dates[AR.t]; $("#ar-scrub").value = AR.t;
-    $("#ar-legend").innerHTML = MODELS.map(([k, name, col]) => `<span><i style="background:${col}"></i>${name} <b>${a.curves[k][AR.t].toFixed(4)}</b></span>`).join("");
+    ["ucl", "uel"].forEach((c) => {
+      const e = D.europe[c];
+      rows.push({ id: c, name: e.name, sub: `${e.played} of ${e.total} league-phase matches played`, d: 1,
+        list: e.teams.map((x) => ({ t: x.k, p: x.w })).sort((a, b) => b.p - a.p) });
+    });
+    return rows;
   }
-  function arLoop() { if (!AR.playing) return; AR.t = Math.min(AR.t + (REDUCED ? 999 : 1), D.arena.n.length - 1); arDraw(); if (AR.t >= D.arena.n.length - 1) { AR.playing = false; $("#ar-play").textContent = "▶ Replay"; return; } AR.raf = requestAnimationFrame(arLoop); }
-  function renderArena() {
-    const a = D.arena; $("#ar-scrub").max = a.n.length - 1; $("#ar-scrub").min = AR.start;
-    if (!AR.init) { AR.t = a.n.length - 1; AR.init = true; }
-    arDraw();
-    const verdict = { "Class frequency (naive)": ["reference", "grey"], "Elo (LogReg)": ["beaten by ML", "amber"], "LogReg (final)": ["CHOSEN: simplest, tied for best", "blue"], "Gradient boosting": ["tied, more complex", "grey"],
-      "MLP deep (5 seeds)": ["tied, more complex", "grey"], "Ensemble LogReg+GB+MLP": ["marginally better, not retained", "grey"], "Bookmaker Bet365 (reference)": ["better than all of ours", "green"] };
-    $("#ar-table").innerHTML = `<table><thead><tr><th>Model</th><th>Log loss</th><th>95 % interval</th><th>Brier</th><th>Accuracy</th><th>Verdict</th></tr></thead><tbody>` + MODELS.map(([k, name]) => {
-      const f = a.final[k], v = verdict[k];
-      return `<tr class="${k === "LogReg (final)" ? "sel" : ""}"><td>${name}</td><td class="num">${f.log_loss.toFixed(4)}</td><td class="num">${f.lo.toFixed(3)}–${f.hi.toFixed(3)}</td><td class="num">${f.brier.toFixed(4)}</td><td class="num">${(f.accuracy * 100).toFixed(1)}%</td><td><span class="status s-${v[1]}">${v[0]}</span></td></tr>`;
-    }).join("") + "</tbody></table>";
+  function pickRow(r) {
+    const top = r.list[0], close = r.list.filter((x) => x.p >= top.p - 0.0105).length;
+    const verdict = close >= 3 ? `${close} clubs within a point` : top.p >= 0.9 ? "near certain" : top.p >= 0.6 ? "clear favourite" : top.p >= 0.4 ? "favourite" : top.p >= 0.2 ? "open race" : "no clear favourite";
+    const shown = r.list.slice(1, 4), me = r.list.findIndex((x) => x.t === FOCUS);
+    const more = shown.map((x) => (x.t === FOCUS ? `<em>${nm(x.t)} ${pc(x.p, r.d)}</em>` : `${nm(x.t)} ${pc(x.p, r.d)}`));
+    if (me > 3) more.push(`<em>${nm(FOCUS)} ${pc(r.list[me].p, r.d)}</em>`);
+    return `<li><a class="pick" href="#standings/${r.id}"><div class="pk-comp"><b>${esc(r.name)}</b><small>${esc(r.sub)}</small></div>` +
+      `<div class="pk-name">${top.t === FOCUS ? `<span class="me">${nm(top.t)}</span>` : nm(top.t)}</div>` +
+      `<div class="pk-p"><b>${pc(top.p, r.d)}</b><span class="bar1"><i style="width:${(top.p * 100).toFixed(1)}%"></i></span><div class="pk-verdict">${verdict}</div></div>` +
+      `<div class="pk-more">${more.join(" · ")}</div></a></li>`;
+  }
+  function lyonBlock() {
+    const L = leagueOf(FOCUS), s = D.leagues[L].sim.summary[FOCUS], eu = euroOf(FOCUS), next = teamFixtures(FOCUS).slice(0, 3);
+    const figs = [[s[0].toFixed(1), `points expected, 80% range ${Math.round(s[1])}–${Math.round(s[2])}`], [s[3].toFixed(1), "average final position"],
+      [pc(s[5]), "chance of a Champions League place"], [pc(s[4]), "chance of the title"]];
+    if (eu) figs.push([pc(eu.row.w, 1), `chance to win the ${compName(eu.comp)}`]);
+    return `<section class="block"><h2>${nm(FOCUS)}: ${ordWord(Math.round(s[3]))} on average, ${pc(s[5])} for the Champions League.</h2>
+      <div class="figs">${figs.map(([v, l]) => `<div class="fig"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
+      <div class="cols" style="margin-top:48px"><div><h3>Next three matches</h3>
+        <ul class="upnext">${next.map((m) => fxRow(m, { dated: true, expand: false })).join("") || '<li class="empty">No fixture left.</li>'}</ul>
+        <a class="link cta" href="#team/${L}/${FOCUS}">Everything about ${nm(FOCUS)} →</a></div>
+      <div><p class="chart-t">Where ${nm(FOCUS)} finishes, across 10,000 simulated seasons</p><div class="chart" data-chart="pos" data-l="${L}" data-t="${esc(FOCUS)}"></div>${posLegend(L, FOCUS)}</div></div></section>`;
+  }
+  function strip() {
+    const P = D.prev, rows = P.rows.filter((r) => daysBetween(r[0], P.last) < 7).reverse(), W = P.summary["Last 7 days"];
+    const right = rows.filter(isRight).length, first = rows[0][0];
+    const better = W.ll < W.ll_book ? "The model did slightly better than the bookmaker" : "The bookmaker did slightly better";
+    return `<section class="block"><h2>Between ${dDay(first)} and ${dDay(P.last)}, it called ${right} of ${rows.length} results right.</h2>
+      <p class="lead">${better}: a log loss of ${W.ll_book.toFixed(3)} for the bookmaker against ${W.ll.toFixed(3)} for the model (lower is better).</p>
+      ${dotGrid(rows)}<a class="link cta" href="#results">See every match →</a></section>`;
+  }
+  function pagePicks() {
+    return head(`Updated ${fm(D.as_of, { day: "numeric", month: "long", year: "numeric" })} · results through ${dDay(D.data_through)}`, "Who wins this season?",
+      "The model's pick in each competition. Click a row for the full table.") +
+      `<ol class="picks">${pickRows().map(pickRow).join("")}</ol>` + lyonBlock() + strip();
   }
 
-  /* ------------------------------------------------------------------ MODEL TAB */
-  function renderModel() {
-    $("#pipeline").innerHTML = [["01", "Data", "29,239 matches, 5 leagues, 2010→2026, plus 656k player valuations."], ["02", "Features", "Elo, form, shots, squad value — built only from the past (leak test)."],
-      ["03", "Model", "Logistic regression, refit every season, walk-forward."], ["04", "Probabilities", "P(win), P(draw), P(loss) with uncertainty intervals."], ["05", "Simulation", "10,000 seasons → title, Europe, relegation odds."]]
-      .map(([n, t, p]) => `<div class="step"><span class="no">${n}</span><h3>${t}</h3><p>${p}</p></div>`).join("");
-    nnStart();
-  }
-  const NN = { raf: 0 };
-  function nnStart() {
-    cancelAnimationFrame(NN.raf); const cv = $("#nn-canvas"); if (!cv) return;
-    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = 260; cv.width = w * dpr; cv.height = h * dpr;
-    const g = cv.getContext("2d"), layers = [[14, "100 inputs"], [9, "64"], [6, "32"], [3, "3 outputs"]], xs = layers.map((_, i) => 50 + i * (w - 100) / 3);
-    const nodes = layers.map(([n], li) => Array.from({ length: n }, (_, k) => [xs[li], 28 + (k + 0.5) * (h - 56) / n]));
-    const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
-    const pulses = Array.from({ length: 26 }, () => ({ l: Math.floor(rnd() * 3), a: Math.floor(rnd() * 99), b: Math.floor(rnd() * 99), p: rnd() }));
-    function frame() {
-      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h); g.lineWidth = 1;
-      for (let l = 0; l < 3; l++) nodes[l].forEach((a) => nodes[l + 1].forEach((b) => { g.strokeStyle = "rgba(58,31,168,.07)"; g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); }));
-      pulses.forEach((p) => { p.p += REDUCED ? 0 : 0.012; if (p.p > 1) { p.p = 0; p.l = Math.floor(rnd() * 3); p.a = Math.floor(rnd() * 99); p.b = Math.floor(rnd() * 99); }
-        const A = nodes[p.l][p.a % nodes[p.l].length], B = nodes[p.l + 1][p.b % nodes[p.l + 1].length];
-        g.fillStyle = p.l % 2 ? C.coral : C.blue; g.beginPath(); g.arc(A[0] + (B[0] - A[0]) * p.p, A[1] + (B[1] - A[1]) * p.p, 2.4, 0, 7); g.fill(); });
-      nodes.forEach((layer, li) => layer.forEach((n) => { g.fillStyle = "#fff"; g.strokeStyle = li === 3 ? C.amber : C.indigo; g.lineWidth = 1.7; g.beginPath(); g.arc(n[0], n[1], 5, 0, 7); g.fill(); g.stroke(); }));
-      g.fillStyle = C.muted; g.font = "11px ui-monospace, Menlo, monospace"; g.textAlign = "center"; layers.forEach(([, lab], li) => g.fillText(lab, xs[li], h - 6));
-      ["away", "draw", "home"].forEach((t, i) => { g.textAlign = "left"; g.fillStyle = C.ink; g.fillText(t, xs[3] + 12, nodes[3][i][1] + 4); });
-      if (S.tab === "model") NN.raf = requestAnimationFrame(frame);
+  /* ------------------------------------------------------------------ MATCHES */
+  function pageMatches(comp) {
+    comp = COMPS.includes(comp) ? comp : S.comp; S.comp = comp;
+    const list = fixturesOf(comp), rounds = [...new Set(list.filter((m) => !m.late).map((m) => m.md))].sort((a, b) => a - b);
+    const teams = [...new Set(list.flatMap((m) => [m.h, m.a]))].sort((a, b) => (D.display[a] || a).localeCompare(D.display[b] || b));
+    if (!teams.includes(S.mteam)) S.mteam = "";
+    let r = S.round[comp]; if (!rounds.includes(r)) r = S.round[comp] = rounds[0];
+    const idx = rounds.indexOf(r), kind = isLeague(comp) ? "Round" : "Matchday";
+    let items, sub;
+    if (S.mteam) { items = list.filter((m) => m.h === S.mteam || m.a === S.mteam); sub = `${nm(S.mteam)}: ${items.length} matches to play`; }
+    else {
+      items = list.filter((m) => m.md === r || (m.late && idx === 0));
+      const ds = items.filter((m) => !m.late).map((m) => m.d).sort();
+      sub = `${kind} ${r}${ds.length ? ` · ${dDay(ds[0])}${ds[ds.length - 1] !== ds[0] ? " – " + dDay(ds[ds.length - 1]) : ""}` : ""}`;
     }
-    frame();
+    const byDay = {};
+    items.slice().sort(cmpFx).forEach((m) => (byDay[m.late ? "late" : m.d] ||= []).push(m));
+    const days = Object.keys(byDay).sort((a, b) => (a === "late" ? -1 : b === "late" ? 1 : a.localeCompare(b)));
+    const cls = items.some((m) => showTime(m) || m.late) ? "fxlist" : "fxlist notime";   // no empty column when no kick-off time is known
+    const body = days.map((d) => `<div class="day">${d === "late" ? "Postponed, new date not published" : dHead(d)}<small>${S.mteam ? `${kind} ${byDay[d][0].md}` : `${byDay[d].length} ${byDay[d].length > 1 ? "matches" : "match"}`}</small></div><ul class="${cls}">${byDay[d].map((m) => fxRow(m, { comp })).join("")}</ul>`).join("") || '<p class="empty">No match left.</p>';
+    const step = S.mteam ? "" : `<span class="step"><button data-step="-1" aria-label="Previous ${kind.toLowerCase()}" ${idx <= 0 ? "disabled" : ""}>‹</button><span>${sub}</span><button data-step="1" aria-label="Next ${kind.toLowerCase()}" ${idx >= rounds.length - 1 ? "disabled" : ""}>›</button></span>`;
+    const note = !isLeague(comp) && D.europe[comp].missing ? `<p class="callout">${D.europe[comp].missing} matches played before ${dDay(D.as_of)} are not recorded in the data yet; they are left out of this list and simulated in the standings.</p>` : "";
+    return head("Predictions for every match still to play", "Match predictions", `Left to right: home win, draw, away win. The bold side is the model's pick${isLeague(comp) ? "; click a match to see why" : ""}.`) +
+      compTabs(comp, "comp") +
+      `<div class="controls">${step}<label class="sel">Team <select id="sel-mteam"><option value="">All teams</option>${teams.map((t) => `<option value="${esc(t)}" ${t === S.mteam ? "selected" : ""}>${nm(t)}</option>`).join("")}</select></label>${S.mteam ? `<span class="small">${sub}</span>` : ""}</div>` +
+      note + body;
   }
 
-  /* ------------------------------------------------------------------ wiring */
-  function showTab(t) {
-    S.tab = t; $$(".tab").forEach((s) => s.classList.toggle("on", s.id === "tab-" + t)); $$(".nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
-    $("#picker").style.visibility = t === "arena" || t === "model" || t === "prev" ? "hidden" : "visible";
-    if (t === "home") renderHome(); if (t === "prev") renderPrev(); if (t === "lab") renderLab(); if (t === "mc") renderMC(); if (t === "arena") renderArena(); if (t === "model") renderModel();
-    history.replaceState(null, "", "#" + t);
+  /* ------------------------------------------------------------------ STANDINGS */
+  function leagueTable(L) {
+    const lg = D.leagues[L], sl = lg.slots;
+    const rows = Object.entries(lg.sim.summary).map(([t, v]) => ({ t, exp: v[0], lo: v[1], hi: v[2], pos: v[3], title: v[4], cl: v[5], eu: v[8], rel: v[9], pts: v[10], n: v[11] })).sort((a, b) => a.pos - b.pos);
+    const min = Math.min(...rows.map((r) => r.lo)) - 2, max = Math.max(...rows.map((r) => r.hi)) + 2;
+    return `<div class="tw"><table><thead><tr><th class="r">#</th><th>Club</th><th class="r">P</th><th class="r">Pts</th><th colspan="2">Expected points, 80% range</th><th class="r">Title</th><th class="r">Champions League</th><th class="r">Europe</th><th class="r">Relegation</th></tr></thead><tbody>` +
+      rows.map((r, i) => `<tr class="${r.t === FOCUS ? "me" : ""}"><td class="r">${i + 1}</td><td class="t">${nm(r.t)}</td><td class="r">${r.n}</td><td class="r">${r.pts}</td><td>${rangeBar(r.lo, r.exp, r.hi, min, max)}</td><td class="r"><b>${r.exp.toFixed(1)}</b></td><td class="r">${pt(r.title)}</td><td class="r">${pt(r.cl)}</td><td class="r">${pt(r.eu)}</td><td class="r">${pt(r.rel)}</td></tr>`).join("") +
+      `</tbody></table></div><p class="small" style="margin-top:16px">Places assumed: Champions League = top ${sl.champions_league}, any European place = top ${sl.europe}, relegation = bottom ${sl.relegation}. Clubs are ordered by average final position over 10,000 simulated seasons.</p>`;
   }
-  function onTeamChange() { resetMatchDefaults(); showTab(S.tab); }
-  function init() {
-    fillLeagues(); fillTeams(); resetMatchDefaults();
-    $("#league").addEventListener("change", (e) => { S.league = e.target.value; S.team = S.league === "F1" ? "Lyon" : teams()[0]; fillTeams(); onTeamChange(); });
-    $("#team").addEventListener("change", (e) => { S.team = e.target.value; onTeamChange(); });
-    $$(".nav button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
-    document.addEventListener("click", (e) => { const el = e.target.closest("[data-go]"); if (el) { const [L, t] = el.dataset.go.split("|"); goTo(L, t, "lab"); } });
-    $("#hide-menu").addEventListener("click", () => { const c = $("#shell").classList.toggle("collapsed"); $("#hide-menu span").textContent = c ? "Show Menu" : "Hide Menu"; setTimeout(() => window.dispatchEvent(new Event("resize")), 300); });
-    if (window.innerWidth < 1000) { $("#shell").classList.add("collapsed"); $("#hide-menu span").textContent = "Show Menu"; }
-    $("#opp").addEventListener("change", (e) => { S.opp = e.target.value; renderSimulator(); });
-    $("#v-home").addEventListener("click", () => { S.venue = "home"; renderSimulator(); }); $("#v-away").addEventListener("click", () => { S.venue = "away"; renderSimulator(); });
-    $("#replay-wf").addEventListener("click", animateBars);
-    $("#mc-play").addEventListener("click", () => { if (MC.k >= mcData().N) mcReset(false); MC.playing = !MC.playing; $("#mc-play").textContent = MC.playing ? "⏸ Pause" : "▶ Play"; if (MC.playing) mcLoop(); });
-    $("#mc-skip").addEventListener("click", () => { MC.playing = false; cancelAnimationFrame(MC.raf); mcStep(1e9); mcDraw(); $("#mc-play").textContent = "▶ Replay"; });
-    $("#mc-reset").addEventListener("click", () => mcReset());
-    $("#ar-play").addEventListener("click", () => { if (AR.t >= D.arena.n.length - 1) AR.t = AR.start; AR.playing = !AR.playing; $("#ar-play").textContent = AR.playing ? "⏸ Pause" : "▶ Play"; if (AR.playing) arLoop(); });
-    $("#ar-reset").addEventListener("click", () => { AR.playing = false; cancelAnimationFrame(AR.raf); AR.t = AR.start; $("#ar-play").textContent = "▶ Play"; arDraw(); });
-    $("#ar-scrub").addEventListener("input", (e) => { AR.playing = false; AR.t = +e.target.value; $("#ar-play").textContent = "▶ Play"; arDraw(); });
-    window.addEventListener("resize", () => { if (S.tab === "lab") drawSpark(info().elo_series); if (S.tab === "arena") arDraw(); if (S.tab === "model") nnStart(); });
-    const hash = location.hash.replace("#", ""); showTab(["home", "prev", "lab", "mc", "arena", "model"].includes(hash) ? hash : "home");
+  function euroTable(c) {
+    const e = D.europe[c], rows = e.teams.slice().sort((a, b) => b.exp - a.exp || b.w - a.w);
+    const missing = e.missing ? ` ${e.missing} matches already played are not in the data yet and are simulated.` : "";
+    return `<div class="tw"><table><thead><tr><th class="r">#</th><th>Club</th><th class="r">P</th><th class="r">Pts</th><th class="r">Expected pts</th><th class="r">Top 8</th><th class="r">Top 24</th><th class="r">Final</th><th class="r">Win</th></tr></thead><tbody>` +
+      rows.map((r, i) => `<tr class="${r.k === FOCUS ? "me" : ""}"><td class="r">${i + 1}</td><td class="t">${nm(r.k)}${r.assumed ? " †" : ""}</td><td class="r">${r.n}</td><td class="r">${r.pts}</td><td class="r">${r.exp.toFixed(1)}</td><td class="r">${pt(r.top8)}</td><td class="r">${pt(r.top24)}</td><td class="r">${pt(r.f)}</td><td class="r"><b>${pw(r.w)}</b></td></tr>`).join("") +
+      `</tbody></table></div><p class="small" style="margin-top:16px">Top 8 go straight to the round of 16, ranks 9 to 24 play the knockout play-offs. Expected points are for the end of the league phase.${missing}${e.n_assumed ? ` † Club missing from the squad-value data: strength assumed low (${e.n_assumed} clubs).` : ""}</p>`;
   }
-  init();
+  function pageStandings(comp) {
+    comp = COMPS.includes(comp) ? comp : "F1";
+    const title = isLeague(comp) ? `${compName(comp)}: projected final table` : `${compName(comp)}: projected league phase`;
+    return head("Where each club is expected to finish", title) + compTabs(comp, "stand") + (isLeague(comp) ? leagueTable(comp) : euroTable(comp)) +
+      `<a class="link cta" href="#matches/${comp}">Predictions for the next matches →</a>`;
+  }
+
+  /* ------------------------------------------------------------------ TEAM */
+  function pageTeam(L, team) {
+    L = LEAGUES.includes(L) ? L : "F1";
+    const lg = D.leagues[L]; if (!lg.teams.includes(team)) team = L === leagueOf(FOCUS) ? FOCUS : lg.teams[0];
+    const s = lg.sim.summary[team], info = lg.info[team], eu = euroOf(team), next = teamFixtures(team).slice(0, 3);
+    const figs = [[s[0].toFixed(1), `points expected, 80% range ${Math.round(s[1])}–${Math.round(s[2])}`], [s[3].toFixed(1), "average final position"],
+      [pc(s[4]), "title"], [pc(s[5]), `Champions League places (top ${lg.slots.champions_league})`], [s[9] < 0.005 ? "&lt;1%" : pc(s[9]), "relegation"]];
+    if (eu) figs.push([pc(eu.row.w, 1), `to win the ${compName(eu.comp)}`]);
+    const sv = info.sv === null ? "" : ` · squad value ×${Math.exp(info.sv).toFixed(2)} the league average`;
+    const teamsSorted = lg.teams.slice().sort((a, b) => (D.display[a] || a).localeCompare(D.display[b] || b));
+    return head(`${esc(lg.name)} · after ${s[11]} rounds`, nm(team),
+      `${s[10]} points · Elo ${Math.round(info.elo).toLocaleString("en-GB")} (${ordNum(info.elo_rank)} of ${lg.teams.length})${sv}`) +
+      `<div class="controls"><label class="sel">League <select id="sel-tl">${LEAGUES.map((l) => `<option value="${l}" ${l === L ? "selected" : ""}>${esc(D.leagues[l].name)}</option>`).join("")}</select></label>
+       <label class="sel">Team <select id="sel-tt">${teamsSorted.map((t) => `<option value="${esc(t)}" ${t === team ? "selected" : ""}>${nm(t)}</option>`).join("")}</select></label></div>` +
+      `<div class="figs">${figs.map(([v, l]) => `<div class="fig"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>` +
+      `<div class="cols" style="margin-top:56px"><div><h3>Next matches</h3><ul class="upnext">${next.map((m) => fxRow(m, { dated: true, focus: team, expand: false })).join("") || '<li class="empty">No fixture left.</li>'}</ul>
+        <a class="link cta" href="#matches/${L}">All ${esc(lg.name)} predictions →</a></div>
+       <div><p class="chart-t">Where ${nm(team)} finishes, across 10,000 simulated seasons</p><div class="chart" data-chart="pos" data-l="${L}" data-t="${esc(team)}"></div>${posLegend(L, team)}</div></div>` +
+      `<section class="block"><h2>Strength since 2016</h2><p class="lead">Elo rating of ${nm(team)} (red) against the rest of the ${esc(lg.name)}.</p><div class="chart" data-chart="elo" data-l="${L}" data-t="${esc(team)}"></div></section>`;
+  }
+
+  /* ------------------------------------------------------------------ RESULTS */
+  function pageResults() {
+    const P = D.prev, names = ["Away win", "Draw", "Home win"];
+    const sum = Object.entries(P.summary).map(([k, v]) => `<div><div class="l">${esc(k.replace(" (2023 → Oct 2026)", ""))}</div><div class="v">${pr(v.acc)}%</div><div class="s">called right, ${v.n} matches<br>Log loss: model ${v.ll.toFixed(3)} · bookmaker ${v.ll_book.toFixed(3)} · no skill ${v.ll_naive.toFixed(3)}</div></div>`).join("");
+    const cal = `<div class="tw"><table><thead><tr><th>Top pick given</th><th class="r">Matches</th><th class="r">Average forecast</th><th class="r">Came true</th></tr></thead><tbody>${P.calibration.map((b) => `<tr><td>${Math.round(b.lo * 100)}–${Math.round(b.hi * 100)}%</td><td class="r">${b.n}</td><td class="r">${pc(b.said)}</td><td class="r"><b>${pc(b.came_true)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    const rows = P.rows.filter((r) => !S.rlg || r[1] === S.rlg).slice(0, 80);
+    const tbl = `<div class="tw"><table><thead><tr><th>Date</th><th>Match</th><th class="r">Score</th><th class="r">Home · draw · away</th><th>Top pick</th><th>Result</th></tr></thead><tbody>` + rows.map((r) => {
+      const best = r[7].indexOf(Math.max(...r[7])), ok = best === r[6], mine = r[2] === FOCUS || r[3] === FOCUS;
+      return `<tr class="${mine ? "me" : ""}"><td>${dDay(r[0])}</td><td class="t">${nm(r[2])} – ${nm(r[3])}</td><td class="r"><b>${r[4]}–${r[5]}</b></td><td class="r">${pr(r[7][2])} · ${pr(r[7][1])} · ${pr(r[7][0])}</td><td>${names[best]} ${pr(r[7][best])}%</td><td class="${ok ? "ok-t" : "no-t"}"><span class="dot ${ok ? "ok" : "no"}"></span>${ok ? "Right" : "Missed"}</td></tr>`;
+    }).join("") + `</tbody></table></div>`;
+    return head(`Matches played up to ${dDay(P.last)}`, "Was the model right?", "Every recent match, with the probabilities the model gave before kick-off.") +
+      `<p class="callout">These forecasts were recomputed after the fact, with the model fitted only on earlier seasons and variables built only from earlier matches. They were not published in advance. "Right" means the most likely outcome happened: a 45% pick is wrong more often than right, so log loss and the calibration table are the fair scores.</p>` +
+      `<div class="sumrow">${sum}</div>` +
+      `<section class="block"><h2>Do the percentages mean what they say?</h2><p class="lead">When the model gave 60–70% to its top pick, it happened ${pc(P.calibration[3].came_true)} of the time, over ${P.n_total.toLocaleString("en-GB")} matches since ${fm(P.from, { month: "long", year: "numeric" })}.</p>${cal}</section>` +
+      `<section class="block"><h2>Match by match</h2><div class="controls"><label class="sel">League <select id="sel-rlg"><option value="">All leagues</option>${LEAGUES.map((l) => `<option value="${l}" ${l === S.rlg ? "selected" : ""}>${esc(D.leagues[l].name)}</option>`).join("")}</select></label></div>${tbl}</section>`;
+  }
+
+  /* ------------------------------------------------------------------ METHOD */
+  function pageMethod() {
+    const A = D.arena.final, names = [["LogReg (final)", "Logistic regression (chosen)"], ["Gradient boosting", "Gradient boosting"], ["MLP deep (5 seeds)", "Neural network"], ["Ensemble LogReg+GB+MLP", "Ensemble of the three"], ["Elo (LogReg)", "Elo"], ["Class frequency (naive)", "Ignoring team quality"], ["Bookmaker Bet365 (reference)", "Bookmaker (Bet365)"]];
+    const tbl = `<div class="tw"><table><thead><tr><th>Forecaster</th><th class="r">Log loss</th><th class="r">95% interval</th><th class="r">Right</th></tr></thead><tbody>${names.map(([k, l]) => `<tr class="${k === "LogReg (final)" ? "me" : ""}"><td class="t">${l}</td><td class="r"><b>${A[k].log_loss.toFixed(3)}</b></td><td class="r">${A[k].lo.toFixed(3)}–${A[k].hi.toFixed(3)}</td><td class="r">${pc(A[k].accuracy, 1)}</td></tr>`).join("")}</tbody></table></div>`;
+    const lr = A["LogReg (final)"].log_loss, bk = A["Bookmaker Bet365 (reference)"].log_loss;
+    return head("What is running behind the numbers", "How it works") +
+      `<section class="block" style="padding-top:48px"><div class="prose"><h2>One model: a logistic regression</h2>
+        <p>Each match gets three probabilities, home win, draw and away win, from a multinomial logistic regression on 100 inputs: Elo rating, squad market value, recent results and shots, schedule. It is refitted every season on all past matches.</p>
+        <div class="formula">P(k | x) = exp(wₖ · x + bₖ) / Σⱼ exp(wⱼ · x + bⱼ)</div>
+        <p>Random forests, gradient boosting, support-vector machines and neural networks were tested too. None beat it significantly, so the simplest and most explainable model stays.</p></div></section>` +
+      `<section class="block"><h2>How good is it?</h2><p class="lead">Since ${fm(D.prev.from, { month: "long", year: "numeric" })}, on ${D.prev.n_total.toLocaleString("en-GB")} matches, the chosen model scores ${lr.toFixed(3)} (log loss, lower is better). The bookmaker scores ${bk.toFixed(3)}: better, and adding the model to its prices adds nothing.</p>
+        <p class="chart-t">Average log loss over the test matches, as they accumulate</p><div class="chart ar" data-chart="arena"></div>
+        <div class="legend"><span><i style="background:${ACCENT}"></i>Logistic regression (chosen)</span><span><i style="background:${MID}"></i>Boosting, neural network, ensemble</span><span><i style="background:${INK}"></i>Bookmaker</span><span><i style="background:${GRAY}"></i>Elo, and ignoring team quality</span></div>${tbl}</section>` +
+      `<section class="block"><div class="prose"><h2>From matches to titles</h2>
+        <p>The season is replayed 10,000 times: each remaining match draws its result from the model's probabilities, after a random shock to every team's strength of 60 Elo points, a size chosen by a backtest on 2023 to 2025. Counting the replays gives the title, qualification and relegation odds.</p>
+        <p>The Champions League and the Europa League use a second model fitted on 3,085 past European matches, from squad value and domestic form, then replay the league phase, the play-offs and the knockout rounds 20,000 times.</p></div></section>` +
+      `<section class="block"><div class="prose"><h2>Limits</h2><ul class="list">
+        <li>No injuries, line-ups or coaching news: the likely reason the bookmaker is better.</li>
+        <li>Team strength is frozen at ${dDay(D.as_of)}; forecasts move after every round.</li>
+        <li>Calendars and dates can change. A match still unplayed after its date is flagged as postponed.</li>
+        <li>Qualification places are assumptions, listed under each league table.</li>
+        <li>The European model is tested match by match, not on whole tournaments. Clubs missing from the squad-value data are assumed weak.</li></ul>
+        <a class="link" href="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS">Code, data sources and the full paper on GitHub →</a></div></section>`;
+  }
+
+  /* ------------------------------------------------------------------ charts (drawn at the real width, so text stays 14 px+) */
+  const svg = (w, h, inner, label) => `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">${inner}</svg>`;
+  function niceStep(max) {
+    for (const s of [0.05, 0.1, 0.2, 0.25, 0.5]) { const top = Math.ceil(max / s - 1e-9) * s; if (top / s <= 4) return [s, top]; }
+    return [0.5, 1];
+  }
+  function posChart(el) {
+    const L = el.dataset.l, team = el.dataset.t, lg = D.leagues[L], probs = lg.sim.pos_probs[team], n = probs.length;
+    const hot = lg.slots.champions_league, rel = lg.slots.relegation;
+    const W = Math.max(280, Math.floor(el.clientWidth)), H = W < 480 ? 290 : 330, ml = 44, mr = 6, mt = 64, mb = 34;
+    const pw = W - ml - mr, ph = H - mt - mb, slot = pw / n, bw = Math.min(24, slot * 0.62), max = Math.max(...probs);
+    const [step, ymax] = niceStep(max), Y = (v) => mt + ph * (1 - v / ymax), y0 = Y(0);
+    let s = "";
+    for (let g = 0; g <= ymax + 1e-9; g += step) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(g)}" y2="${Y(g)}" stroke="${RULE}"/><text x="${ml - 8}" y="${Y(g) + 5}" text-anchor="end" font-size="14" fill="${INK3}">${Math.round(g * 100)}%</text>`;
+    const bar = (x, y, w, r = 4) => { r = Math.min(r, w / 2, y0 - y); return `M${x},${y0} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y0} Z`; };
+    probs.forEach((p, i) => {
+      const x = ml + i * slot + (slot - bw) / 2, col = i < hot ? ACCENT : i >= n - rel ? MID : GRAY;
+      if (p > 0.0005) s += `<path d="${bar(x, Y(p), bw)}" fill="${col}"><title>${ordNum(i + 1)}: ${(p * 100).toFixed(1)}%</title></path>`;
+      if (slot >= 22 || i % 2 === 0) s += `<text x="${x + bw / 2}" y="${H - mb + 24}" text-anchor="middle" font-size="14" fill="${INK3}">${i + 1}</text>`;
+    });
+    const im = probs.indexOf(max);
+    s += `<text x="${ml + im * slot + slot / 2}" y="${Y(max) - 8}" text-anchor="middle" font-size="15" font-weight="600" fill="${INK}">${pr(max)}%</text>`;
+    const bracket = (i0, i1, label, anchor, up) => {
+      const pmax = Math.max(...probs.slice(i0, i1 + 1)), x1 = ml + i0 * slot + (slot - bw) / 2, x2 = ml + i1 * slot + (slot - bw) / 2 + bw, yb = Y(pmax) - up;
+      return `<path d="M${x1},${yb + 7} L${x1},${yb} L${x2},${yb} L${x2},${yb + 7}" fill="none" stroke="${anchor === "start" ? ACCENT : MID}" stroke-width="2"/><text x="${anchor === "start" ? x1 : x2}" y="${yb - 9}" text-anchor="${anchor}" font-size="15" font-weight="600" fill="${INK}">${label}</text>`;
+    };
+    const pHot = probs.slice(0, hot).reduce((a, b) => a + b, 0);
+    s += bracket(0, hot - 1, `Champions League: ${pc(pHot)}`, "start", 36);
+    el.innerHTML = svg(W, H, s, `Distribution of the final position of ${D.display[team] || team}`);
+  }
+  function posLegend(L, team) {
+    const lg = D.leagues[L], p = lg.sim.pos_probs[team], n = p.length, sum = (a, b) => p.slice(a, b).reduce((x, y) => x + y, 0);
+    return `<div class="legend"><span><i style="background:${ACCENT}"></i>Champions League places (top ${lg.slots.champions_league}): ${pc(sum(0, lg.slots.champions_league))}</span><span><i style="background:${MID}"></i>Relegation places (bottom ${lg.slots.relegation}): ${sum(n - lg.slots.relegation, n) < 0.005 ? "under 1%" : pc(sum(n - lg.slots.relegation, n))}</span></div>`;
+  }
+  function eloChart(el) {
+    const L = el.dataset.l, team = el.dataset.t, lg = D.leagues[L], months = D.elo_months, start = months.indexOf("2016-08");
+    const ser = (t) => lg.info[t].elo_series.slice(start), all = lg.teams.flatMap((t) => ser(t).filter((v) => v !== null));
+    const lo = Math.floor(Math.min(...all) / 100) * 100, hi = Math.ceil(Math.max(...all) / 100) * 100;
+    const W = Math.max(280, Math.floor(el.clientWidth)), H = W < 480 ? 280 : 340, ml = 52, mr = 14, mt = 34, mb = 34, pw = W - ml - mr, ph = H - mt - mb, N = months.length - start;
+    const X = (i) => ml + (i / (N - 1)) * pw, Y = (v) => mt + ph * (1 - (v - lo) / (hi - lo));
+    let s = "";
+    for (let g = lo; g <= hi; g += 100) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(g)}" y2="${Y(g)}" stroke="${RULE}"/><text x="${ml - 8}" y="${Y(g) + 5}" text-anchor="end" font-size="14" fill="${INK3}">${g.toLocaleString("en-GB")}</text>`;
+    months.slice(start).forEach((m, i) => { if (m.endsWith("-01") && (+m.slice(0, 4)) % (W < 480 ? 3 : 2) === 0) s += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="14" fill="${INK3}">${m.slice(0, 4)}</text>`; });
+    const path = (vals) => { let d = "", on = false; vals.forEach((v, i) => { if (v === null) { on = false; return; } d += `${on ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)} `; on = true; }); return d; };
+    lg.teams.filter((t) => t !== team).forEach((t) => (s += `<path d="${path(ser(t))}" fill="none" stroke="${GRAY}" stroke-width="1" stroke-linejoin="round"><title>${D.display[t] || t}</title></path>`));
+    const mine = ser(team), last = mine.length - 1 - [...mine].reverse().findIndex((v) => v !== null);
+    s += `<path d="${path(mine)}" fill="none" stroke="${ACCENT}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(last)}" cy="${Y(mine[last])}" r="5" fill="${ACCENT}" stroke="${PAPER}" stroke-width="2"/>`;
+    s += `<text x="${X(last)}" y="${Y(mine[last]) - 14}" text-anchor="end" font-size="15" font-weight="600" fill="${INK}" stroke="${PAPER}" stroke-width="4" paint-order="stroke">${D.display[team] || team} ${Math.round(lg.info[team].elo).toLocaleString("en-GB")}</text>`;
+    el.innerHTML = svg(W, H, s, `Elo rating of ${D.display[team] || team} since 2016`);
+  }
+  function arenaChart(el) {
+    const A = D.arena, i0 = A.n.findIndex((n) => n >= 450), xs = A.n.slice(i0), W = Math.max(280, Math.floor(el.clientWidth));
+    const wide = W >= 700, H = W < 480 ? 300 : 360, ml = 52, mr = wide ? 170 : 12, mt = 16, mb = 34, pw = W - ml - mr, ph = H - mt - mb;
+    const cur = (k) => A.curves[k].slice(i0), vals = Object.keys(A.curves).flatMap(cur);
+    const lo = Math.floor(Math.min(...vals) * 20) / 20, hi = Math.ceil(Math.max(...vals) * 20) / 20;
+    const X = (i) => ml + (i / (xs.length - 1)) * pw, Y = (v) => mt + ph * (1 - (v - lo) / (hi - lo));
+    let s = "";
+    for (let g = lo; g <= hi + 1e-9; g += 0.05) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(g)}" y2="${Y(g)}" stroke="${RULE}"/><text x="${ml - 8}" y="${Y(g) + 5}" text-anchor="end" font-size="14" fill="${INK3}">${g.toFixed(2)}</text>`;
+    A.dates.slice(i0).forEach((d, i, arr) => { if (d.slice(5, 7) === "01" && (i === 0 || arr[i - 1].slice(5, 7) !== "01")) s += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="14" fill="${INK3}">${d.slice(0, 4)}</text>`; });
+    const line = (k, col, w) => `<path d="${cur(k).map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round"><title>${k}</title></path>`;
+    s += line("Class frequency (naive)", GRAY, 1.5) + line("Elo (LogReg)", MID, 1.5) + line("Gradient boosting", MID, 1.5) + line("MLP deep (5 seeds)", MID, 1.5) + line("Ensemble LogReg+GB+MLP", MID, 1.5) + line("LogReg (final)", ACCENT, 2.5) + line("Bookmaker Bet365 (reference)", INK, 2.5);
+    if (wide) {
+      const end = (k) => cur(k)[xs.length - 1], lab = (v, y, t) => `<text x="${W - mr + 12}" y="${y + 5}" font-size="15" fill="${INK}">${t} <tspan font-weight="600">${v.toFixed(3)}</tspan></text>`;
+      s += lab(end("Bookmaker Bet365 (reference)"), Y(end("Bookmaker Bet365 (reference)")) + 9, "Bookmaker") + lab(end("LogReg (final)"), Y(end("LogReg (final)")) - 9, "Our models") +
+        lab(end("Elo (LogReg)"), Y(end("Elo (LogReg)")), "Elo") + lab(end("Class frequency (naive)"), Y(end("Class frequency (naive)")), "No skill");
+    }
+    el.innerHTML = svg(W, H, s, "Cumulative log loss of the forecasters over the test matches");
+  }
+  function drawCharts() { $$(".chart[data-chart]").forEach((el) => ({ pos: posChart, elo: eloChart, arena: arenaChart }[el.dataset.chart](el))); }
+
+  /* ------------------------------------------------------------------ router */
+  const TITLES = { picks: "Picks", matches: "Match predictions", standings: "Projected tables", team: "Team", results: "Was the model right?", method: "How it works" };
+  function route() {
+    const [p0, a, b] = location.hash.slice(1).split("/").map(decodeURIComponent);
+    const page = TITLES[p0] ? p0 : "picks";
+    const html = { picks: () => pagePicks(), matches: () => pageMatches(a), standings: () => pageStandings(a), team: () => pageTeam(a, b), results: () => pageResults(), method: () => pageMethod() }[page]();
+    const same = S.page === page; S.page = page;
+    $("#app").innerHTML = html;
+    $$("#nav a").forEach((x) => (x.getAttribute("data-p") === page ? x.setAttribute("aria-current", "page") : x.removeAttribute("aria-current")));
+    document.title = `${TITLES[page]} · OL·LAB`;
+    drawCharts();
+    if (!same) window.scrollTo(0, 0);
+  }
+  document.addEventListener("click", (e) => {
+    const k = e.target.closest(".fx[data-k]");
+    if (k) {
+      const open = k.getAttribute("aria-expanded") === "true", box = k.nextElementSibling;
+      if (!open && !box.innerHTML) box.innerHTML = detail(k.dataset.k);
+      k.setAttribute("aria-expanded", String(!open)); box.hidden = open; return;
+    }
+    const c = e.target.closest("[data-comp]"); if (c) { location.hash = `#matches/${c.dataset.comp}`; return; }
+    const t = e.target.closest("[data-stand]"); if (t) { location.hash = `#standings/${t.dataset.stand}`; return; }
+    const st = e.target.closest("[data-step]");
+    if (st && !st.disabled) {
+      const list = fixturesOf(S.comp), rounds = [...new Set(list.filter((m) => !m.late).map((m) => m.md))].sort((x, y) => x - y);
+      S.round[S.comp] = rounds[Math.max(0, Math.min(rounds.length - 1, rounds.indexOf(S.round[S.comp]) + Number(st.dataset.step)))]; route();
+    }
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.id === "sel-mteam") { S.mteam = e.target.value; route(); }
+    if (e.target.id === "sel-rlg") { S.rlg = e.target.value; route(); }
+    if (e.target.id === "sel-tl") { const L = e.target.value; location.hash = `#team/${L}/${encodeURIComponent(L === leagueOf(FOCUS) ? FOCUS : D.leagues[L].teams[0])}`; }
+    if (e.target.id === "sel-tt") location.hash = `#team/${$("#sel-tl").value}/${encodeURIComponent(e.target.value)}`;
+  });
+  let timer; window.addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(drawCharts, 150); });
+  window.addEventListener("hashchange", route);
+  route();
 })();

@@ -2,7 +2,7 @@
 PY ?= python
 export PYTHONPATH := src
 
-.PHONY: report europe site all install data features baselines ml nn interpret final ablation backtest ol simulate figures pipeline dashboard test clean
+.PHONY: weekly report europe site all install data features baselines ml nn interpret final ablation backtest ol simulate figures pipeline dashboard test clean
 
 all: features baselines ml nn interpret final ablation backtest ol simulate figures
 
@@ -45,8 +45,11 @@ figures:
 # Minimal pipeline needed by the dashboard (skips the model comparison)
 pipeline: features backtest ol simulate
 
-europe:                  ## Champions League winner (needs data/raw/calendar/ucl_2026_27.csv)
+europe:                  ## Champions League and Europa League winners (reads the Wikipedia league-phase pages)
 	$(PY) -m olpred.europe && $(PY) -m olpred.europe_sim
+
+# Refresh everything the website shows (~40 min, needs internet): results, team state, simulations, Europe, site
+weekly: features final ol simulate europe site
 
 report:                  ## paper-style PDF (needs pdflatex)
 	$(PY) -m olpred.report_tex

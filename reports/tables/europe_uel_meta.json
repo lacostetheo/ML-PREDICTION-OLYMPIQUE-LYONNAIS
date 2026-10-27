@@ -1,0 +1,27 @@
+{
+ "played": 54,
+ "total": 144,
+ "n_assumed": 8,
+ "sensitivity_title": {
+  "0.0": {
+   "Juventus": 0.1528,
+   "Bournemouth": 0.1448,
+   "Benfica": 0.1128,
+   "Bayer Leverkusen": 0.104,
+   "Crystal Palace": 0.088,
+   "Milan": 0.0804,
+   "Sunderland": 0.0702,
+   "Rennes": 0.0466
+  },
+  "0.3": {
+   "Bournemouth": 0.142,
+   "Juventus": 0.135,
+   "Benfica": 0.107,
+   "Bayer Leverkusen": 0.0988,
+   "Crystal Palace": 0.093,
+   "Milan": 0.0874,
+   "Sunderland": 0.0698,
+   "Rennes": 0.0468
+  }
+ }
+}

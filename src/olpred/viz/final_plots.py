@@ -23,7 +23,7 @@ def load():
 def logloss(pred) -> None:
     probs = {m: probs_of(pred, m) for m in ORDER}
     print(logloss_figure(probs, pred["y"].to_numpy(), pred["date"],
-                         title="Test seasons: LogReg, boosting and MLP are tied; the bookmaker is better",
+                         title="Three model families are tied; the bookmaker is ahead",
                          filename="final_logloss.png",
                          xlabel="Log loss, walk-forward test 2023 → 2026 (lower is better); bars = 95 % CI"))
 

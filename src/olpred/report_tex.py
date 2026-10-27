@@ -24,6 +24,11 @@ def esc(s) -> str:
     return s
 
 
+def dmy(iso: str) -> str:
+    """2026-10-21 -> 21 Oct 2026"""
+    return pd.Timestamp(iso).strftime("%-d %b %Y")
+
+
 def pct(x, d=0) -> str:
     return esc(f"{100 * x:.{d}f}%")
 
@@ -126,6 +131,7 @@ TITLE = r"""
 \begin{center}\textbf{Abstract}\end{center}
 \vspace{-4pt}
 \begin{center}\begin{minipage}{0.88\textwidth}\small
+This project was carried out in October 2026, two months into the 2026/27 season, and every ``current'' number refers to the state of 26 October 2026 (7 Ligue 1 matches played).
 We ask whether machine learning can forecast the results of Olympique Lyonnais (OL) better than an Elo rating or the betting market.
 On 29{,}239 matches of the five major European leagues (2010/11 to October 2026) we build features strictly from information available before kick-off, checked by an automated perturbation test,
 and compare Elo, Poisson, logistic regression, random forest, gradient boosting, SVM and neural networks on a walk-forward test of 5{,}602 matches.
@@ -143,6 +149,8 @@ add = BODY.append
 
 # ------------------------------------------------------------------ 1 Introduction
 add(r"\section{Introduction}")
+add(r"""\textbf{When this was done.} This project was carried out in \textbf{October 2026}, two months into the 2026/27 season. Seven rounds of Ligue 1 had been played; the data end with the matches of 21 October 2026,
+and the snapshot used for all forecasts is dated 26 October 2026. Anything described as ``current'', ``next'' or ``projected'' refers to that date and will change as the season goes on.""")
 add(r"""Football is the sport where the gap between a simple forecast and the best one is smallest: a match is decided by a handful of goals,
 the stronger team wins only about one time in two, and one game in four ends in a draw. This makes it a good laboratory for a question that also matters in finance:
 \emph{how much can a model extract from public data, how reliably can that be measured, and does it survive comparison with a liquid market?}""")
@@ -152,8 +160,8 @@ add(r"""\begin{definition}[Match forecast]
 A \emph{match forecast} is a probability vector $p=(p_A,p_D,p_H)$ over the outcomes away win, draw and home win, computed from information available before kick-off.
 The \emph{expected points} of the home side are $3p_H+p_D$.
 \end{definition}""")
-add(r"""For instance, for Paris SG--Lyon on 26 October 2026, the model gives the forecast of Table~\ref{tab:psg}, close to the bookmaker's.""")
-cap(r"Forecast for Paris SG--Lyon, 26 October 2026.\label{tab:psg}")
+add(r"""For instance, for the Ligue 1 match Paris SG--Lyon played on Monday 26 October 2026, the model gives the forecast of Table~\ref{tab:psg}, close to the bookmaker's.""")
+cap(r"Forecast for Paris SG--Lyon (Ligue 1, Monday 26 October 2026).\label{tab:psg}")
 add(tab([["", "OL win", "Draw", "OL loss", "OL expected points"],
          ["Model", "15\\%", "21\\%", "64\\%", "0.67"],
          ["Bookmaker (margin removed)", "15\\%", "20\\%", "65\\%", "--"]], "lcccc"))
@@ -305,8 +313,10 @@ These forecasts are recomputed \emph{after the fact} with the walk-forward metho
 They were \textbf{not published in advance}. ``Right'' means that the most likely outcome occurred: a 45\% pick is wrong more often than right, by design, so log loss and calibration are the fair scores.
 \end{remark}""")
 rows = [["Period", "Matches", "Correct", "LL model", "LL bookmaker", "LL no-skill"]]
+last_d = pd.Timestamp(prev["last"])
+when = {"Last 7 days": f"{(last_d - pd.Timedelta(days=6)).strftime('%-d %b')}--{last_d.strftime('%-d %b %Y')}", "Last 30 days": f"{(last_d - pd.Timedelta(days=29)).strftime('%-d %b')}--{last_d.strftime('%-d %b %Y')}"}
 for k, v in prev["summary"].items():
-    rows.append([esc(k), v["n"], pct(v["acc"]), f"{v['ll']:.3f}", f"{v['ll_book']:.3f}", f"{v['ll_naive']:.3f}"])
+    rows.append([esc(k + (f" ({when[k]})" if k in when else "")), v["n"], pct(v["acc"]), f"{v['ll']:.3f}", f"{v['ll_book']:.3f}", f"{v['ll_naive']:.3f}"])
 cap(r"Accuracy and log loss (LL) over recent periods.")
 add(tab(rows, "lccccc"))
 rows = [["Top pick given", "Matches", "Mean forecast", "Came true"]]
@@ -314,14 +324,14 @@ for b in prev["calibration"]:
     rows.append([f"{int(b['lo'] * 100)}--{int(b['hi'] * 100)}\\%", b["n"], pct(b["said"]), pct(b["came_true"])])
 cap(r"When the model said $x$\%, how often did it happen? (all 5{,}602 test matches)")
 add(tab(rows, "cccc"))
-add(r"""When the top pick was given 60--70\%, it happened 63\% of the time. Over the last 30 days the model is right 56\% of the time and is slightly less sharp than the bookmaker.""")
+add(r"""When the top pick was given 60--70\%, it happened 63\% of the time. Over the last 30 days of the data (22 September to 21 October 2026) the model is right 56\% of the time and is slightly less sharp than the bookmaker.""")
 names = ["Away win", "Draw", "Home win"]
 rows = [["Date", "Match", "Score", "H / D / A", "Top pick", "Result"]]
 for d, lg, h, a, hg, ag, y, p in prev["rows"][:14]:
     best = max(range(3), key=lambda i: p[i])
-    rows.append([d[5:], esc(f"{h} -- {a}").replace("--", "--"), f"{hg}--{ag}", f"{100 * p[2]:.0f} / {100 * p[1]:.0f} / {100 * p[0]:.0f}",
+    rows.append([pd.Timestamp(d).strftime("%-d %b"), esc(f"{h} -- {a}").replace("--", "--"), f"{hg}--{ag}", f"{100 * p[2]:.0f} / {100 * p[1]:.0f} / {100 * p[0]:.0f}",
                  f"{names[best]} {100 * p[best]:.0f}\\%", "Right" if best == y else "Wrong"])
-cap(r"The 14 most recent matches (probabilities in \%).")
+cap(r"The 14 most recent matches before the snapshot, 2026 season (probabilities in \%).")
 add(tab(rows, "llcccl", size=r"\footnotesize"))
 
 # ------------------------------------------------------------------ 11 OL
@@ -329,7 +339,7 @@ add(r"\section{Case study: Olympique Lyonnais}")
 add(fig("ol_strength_profile.png", 0.8, "OL's profile in Ligue 1 on 26 October 2026 (percentile among clubs; right: rank).", "fig:prof"))
 add(r"""OL is third in Ligue 1 by Elo (1{,}615; Paris SG 1{,}707), fifth for recent points and goals scored, and fifth by squad value (EUR 305 m; the defence is only tenth).
 Results and rating are better than the shot volume (tenth for shots on target) would suggest.
-The 90\% interval on OL's win probability at Paris SG is 14--17\% with model uncertainty only (100 bootstrap refits) and 12--21\% once uncertainty on the true strength of both teams is added (Elo shaken by 60 points).""")
+The 90\% interval on OL's win probability at Paris SG (26 October 2026) is 14--17\% with model uncertainty only (100 bootstrap refits) and 12--21\% once uncertainty on the true strength of both teams is added (Elo shaken by 60 points).""")
 
 # ------------------------------------------------------------------ 12 Simulation
 add(r"\section{Season simulation}")
@@ -358,7 +368,7 @@ rows = [["Team", "Exp. points [80\\%]", "Title", "Champions Lg.", "Top 4", "Rele
 for tm in ["Paris SG", "Monaco", "Lille", "Lyon"]:
     v = sim["summary"][tm]
     rows.append([esc(tm), f"{v[0]:.1f} [{v[1]:.0f}--{v[2]:.0f}]", pct(v[4], 1), pct(v[5], 1), pct(v[6], 1), pct(v[9], 1)])
-cap(r"Ligue 1 2026/27 (state of 26 October 2026, 7 matches played).")
+cap(r"Ligue 1 2026/27 (state of 26 October 2026, after 7 rounds).")
 add(tab(rows, "lccccc", bold_rows=(4,)))
 add(fig("sim_ol_position.png", 0.8, "Final position of OL over 10{,}000 simulated seasons.", "fig:pos"))
 add(rf"""The average final position of OL is \textbf{{{ol[3]:.1f}}}; the most likely finishes are 2nd and 3rd ({pct(ol_pos[1])} and {pct(ol_pos[2])}), but the distribution is wide:
@@ -367,7 +377,7 @@ after 7 matches six clubs share 13--14 points, so the forecast rests on team str
 # ------------------------------------------------------------------ 13 Champions League
 add(r"\section{Champions League 2026/27}\label{sec:ucl}")
 add(rf"""The aim is to use the real fixtures and to combine each club's performance in its own championship. The calendar (144 league-phase matches, 36 clubs) comes from Wikipedia;
-only {euro_meta['played']} matches were recorded when I collected it, the others are simulated.
+only {euro_meta['played']} had been recorded there when I collected the data on 27 October 2026 (matchdays 1 to 3 run from 8 September to 21 October 2026), so the others are simulated.
 Domestic leagues are only comparable through matches between their clubs, so I fitted a logistic regression on 3{{,}}085 past Champions League, Europa League and Conference League matches (2012--2025):""")
 add(r"""\begin{equation}d^{\text{value}}=\ln V_{\text{home}}-\ln V_{\text{away}},\qquad d^{\text{ppg}}=\mathrm{ppg}_{\text{home}}-\mathrm{ppg}_{\text{away}},\end{equation}
 where $\mathrm{ppg}$ is the number of domestic league points per match over the last 20 league matches.""")
@@ -418,7 +428,7 @@ REFS = r"""
 
 
 def main() -> None:
-    tex = PRE + TITLE + "\n".join(BODY) + REFS + "\n\\end{document}\n"
+    tex = PRE + TITLE + "\n\n".join(BODY) + REFS + "\n\\end{document}\n"
     tex = tex.replace(r"\section{Introduction}", r"\section{Introduction}", 1)
     OUT.write_text(tex, encoding="utf8")
     for _ in range(2):

@@ -82,7 +82,7 @@ European slots are assumptions (`configs/leagues.json`). Details: [`docs/phase8_
 
 A static site (HTML + JavaScript, no server, no dependency) in a dashboard layout, with five sections:
 
-1. **Dashboard** (home) — projected **top 3 of each of the five leagues** after 10,000 simulated seasons, the title race, the most likely qualifiers for the **Champions League** and **Europa/Conference** places, and the next round with the model's favourite. *Champions League / Europa League winners are deliberately not predicted*: the model has no European-competition data (participants, draw, results, a strength scale shared between leagues), so a number would be invented — see the page for what is needed.
+1. **Dashboard** (home) — projected **top 3 of each of the five leagues** after 10,000 simulated seasons, the title race, the most likely qualifiers for the **Champions League** and **Europa/Conference** places, and the next round with the model's favourite. The **Champions League winner** is predicted from the real 2026/27 fixtures (indicative, see [`docs/europe_ucl.md`](docs/europe_ucl.md): no clear favourite, five clubs near 13 %); the Europa League winner is not yet.
 2. **Match Lab** — pick a team: probabilities of its **next three matches**, a match simulator, and an animated decomposition showing how Elo, squad value, form… add up to the forecast (exact for a logistic regression).
 3. **Season Monte Carlo** — replay of simulated seasons building the distribution of the team's final position and points.
 4. **Model Arena** — animated race of seven forecasters over the 5,602 test matches.

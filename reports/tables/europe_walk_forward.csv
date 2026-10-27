@@ -1,0 +1,5 @@
+model,n,log_loss,brier,rps,accuracy,f1_macro,f1_draw,ece
+Class frequency,943,1.0351,0.6238,0.2331,0.4942,0.2205,0.0,0.0354
+Squad value only,943,0.984,0.5811,0.2125,0.5504,0.3887,0.0,0.0421
+Domestic form only,943,1.0368,0.6249,0.2333,0.4973,0.2278,0.0,0.048
+Value + domestic form,943,0.9834,0.581,0.2121,0.5536,0.3917,0.0,0.0426

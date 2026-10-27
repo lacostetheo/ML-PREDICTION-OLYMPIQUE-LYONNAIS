@@ -55,19 +55,19 @@
               <div class="card"><h3>Other European places <span class="chip">Europa / Conference</span></h3><div class="tablewrap" id="uel"></div></div>
             </div>
             <div class="grid g2">
-              <div class="card"><div class="winner"><div class="tile t-yellow"><svg viewBox="0 0 24 24"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zm-1 4v1a2 2 0 0 0 1 1.7V7zm12 0h-1v2.7A2 2 0 0 0 18 8z"/></svg></div>
-                <div><h4>Champions League winner</h4><p><b>Not predicted yet.</b> This model has no European data for 2026/27 (participants, draw, results so far) and no strength scale shared between leagues. A number here would be invented.</p><span class="chip warn tag">needs data — see below</span></div></div></div>
+              <div class="card"><h3>Champions League winner <span class="chip">indicative</span></h3><div class="tablewrap" id="ucl-win"></div>
+                <p class="note" id="ucl-note"></p></div>
               <div class="card"><div class="winner"><div class="tile t-coral"><svg viewBox="0 0 24 24"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3zm-1 4v1a2 2 0 0 0 1 1.7V7zm12 0h-1v2.7A2 2 0 0 0 18 8z"/></svg></div>
-                <div><h4>Europa League winner</h4><p><b>Not predicted yet</b>, for the same reasons. What <i>is</i> real is the qualification odds in the tables above.</p><span class="chip warn tag">needs data — see below</span></div></div></div>
+                <div><h4>Europa League winner</h4><p><b>Not predicted yet.</b> Same method possible, but the Europa League fixtures and results have not been collected. What <i>is</i> real is the qualification odds in the tables above.</p><span class="chip warn tag">next step</span></div></div></div>
             </div>
           </div>
           <div>
             <div class="card"><div class="up-day" id="up-day">Next round</div><div id="upcoming"></div>
               <p class="note">Arrow = most likely outcome for the home side. Click to open the match.</p></div>
-            <div class="card"><h3>What is needed for European winners</h3><ul class="limits" style="font-size:12.5px;color:var(--text)">
-              <li>A strength scale <b>shared between leagues</b> (calibrated on past European matches: possible).</li>
-              <li>The real 2026/27 <b>participants, draw and results</b> (not in the data sources used here).</li>
-              <li>A <b>backtest</b> on past editions before showing any winner probability.</li></ul></div>
+            <div class="card"><h3>How the Champions League winner is computed</h3><ul class="limits" style="font-size:12.5px;color:var(--text)">
+              <li>Real 2026/27 fixtures and results so far, then 20,000 simulations of the rest: league phase, play-offs, round of 16 to final.</li>
+              <li>Strength = <b>squad market value</b> + <b>domestic form</b>, fitted on 3,085 past European matches. Value is clearly useful (log loss 0.984 vs 1.035); domestic form adds nothing measurable.</li>
+              <li>Bracket pairings are approximate and three clubs (AEK, Sabah, Slovan) are not in the data: assumed weak.</li></ul></div>
           </div>
         </div>
       </section>
@@ -146,7 +146,7 @@
           <li>No injuries, line-ups or coaching news — the likely reason the bookmaker is better.</li>
           <li>Draws are essentially unpredictable: the model almost never names a draw as the most likely outcome.</li>
           <li>Team strength is a snapshot of <b id="asof2">—</b>. Results of 23–25 October 2026 were not yet in the data source.</li>
-          <li>No European-competition modelling: no Champions League / Europa League winner is predicted.</li>
+          <li>Champions League winner: indicative only (tested on single matches, not on whole tournaments); no Europa League winner yet.</li>
           <li>Calendars beyond the next round come from a public Ligue 1 calendar (dates can change); other leagues: choose the opponent.</li>
           <li>Academic project — <b>not betting advice</b>.</li></ul></div>
       </section>

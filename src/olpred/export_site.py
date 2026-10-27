@@ -155,6 +155,14 @@ def main() -> None:
                           "brier": float(table.loc[m, "brier"])} for m in models}
     out["arena"] = arena
 
+    ucl = TABLES / "europe_ucl_probabilities.csv"
+    if ucl.exists():  # Champions League winner model (python -m olpred.europe_sim)
+        u = pd.read_csv(ucl).head(14)
+        meta = json.loads((TABLES / "europe_ucl_meta.json").read_text())
+        out["ucl"] = {"rows": [{k: (round(float(r[k]), 4) if k != "team" else r[k]) for k in
+                                ["team", "top8", "top24", "SF", "Final", "Winner"]} for _, r in u.iterrows()],
+                      "played": meta["played"], "total": meta["total"]}
+
     (SITE / "data.js").write_text("window.OLDATA = " + json.dumps(out, separators=(",", ":")) + ";\n")
     print("site/data.js", round((SITE / "data.js").stat().st_size / 1e6, 2), "MB;", sum(len(v) for v in pairs_all.values()), "pairs")
 

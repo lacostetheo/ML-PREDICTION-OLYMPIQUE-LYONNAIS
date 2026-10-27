@@ -113,6 +113,13 @@
     LEAGUE_ORDER.forEach((L) => Object.entries(D.leagues[L].sim.summary).forEach(([t, s]) => all.push({ L, t, cl: s[5], eu: Math.max(0, s[8] - s[5]) })));
     const bar = (v, c) => `<span class="cellbar" style="width:${Math.round(v * 70)}px;background:${c}"></span>${pct(v)}`;
     const tbl = (rows, key, color) => `<table><thead><tr><th>Team</th><th>League</th><th>Probability</th></tr></thead><tbody>${rows.map((r) => `<tr data-go="${r.L}|${r.t}" style="cursor:pointer"><td>${r.t}</td><td>${D.leagues[r.L].name}</td><td class="num">${bar(r[key], color)}</td></tr>`).join("")}</tbody></table>`;
+    const U = OLDATA.ucl;
+    if (U) {
+      const pc = (v) => (v * 100).toFixed(v < 0.1 ? 1 : 0) + " %";
+      $("#ucl-win").innerHTML = `<table><thead><tr><th>Club</th><th>Top 8</th><th>Semi</th><th>Final</th><th>Winner</th></tr></thead><tbody>` +
+        U.rows.map((r) => `<tr><td>${r.team}</td><td>${pc(r.top8)}</td><td>${pc(r.SF)}</td><td>${pc(r.Final)}</td><td><b>${pc(r.Winner)}</b></td></tr>`).join("") + `</tbody></table>`;
+      $("#ucl-note").textContent = `${U.played} of ${U.total} league-phase matches in the data. No clear favourite: the six leading clubs are within a few points of each other.`;
+    }
     $("#ucl").innerHTML = tbl([...all].sort((a, b) => b.cl - a.cl).slice(0, 14), "cl", C.blue);
     $("#uel").innerHTML = tbl([...all].sort((a, b) => b.eu - a.eu).slice(0, 14), "eu", C.violet);
   }

@@ -27,6 +27,8 @@ main { padding-bottom: 40px; outline: none; }
 /* ---------- masthead */
 .mast { border-bottom: 1px solid var(--rule); }
 .mast .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.brand { display: flex; align-items: baseline; gap: 6px 18px; flex-wrap: wrap; }
+.upd { font: 500 14px var(--sans); color: var(--ink3); white-space: nowrap; }
 .mark { font: 600 22px var(--serif); letter-spacing: -.01em; text-decoration: none; }
 nav a { font: 500 16px var(--sans); margin-left: 30px; color: var(--ink2); text-decoration: none; padding: 8px 0; border-bottom: 2px solid transparent; }
 nav a:hover { color: var(--ink); }

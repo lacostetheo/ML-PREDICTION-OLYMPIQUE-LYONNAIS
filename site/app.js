@@ -388,5 +388,7 @@
   });
   let timer; window.addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(drawCharts, 150); });
   window.addEventListener("hashchange", route);
+  $("#upd").textContent = `Updated ${fm(D.as_of, { day: "numeric", month: "short", year: "numeric" })}`;
+  $("#refresh").textContent = `Last updated ${fm(D.as_of, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, with results through ${dDay(D.data_through)}. The numbers are recomputed every Monday.`;
   route();
 })();

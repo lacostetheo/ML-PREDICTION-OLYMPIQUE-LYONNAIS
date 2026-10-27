@@ -36,6 +36,8 @@ main { padding-bottom: 40px; outline: none; }
 /* ---------- masthead */
 .mast { border-bottom: 1px solid var(--rule); }
 .mast .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.brand { display: flex; align-items: baseline; gap: 6px 18px; flex-wrap: wrap; }
+.upd { font: 500 14px var(--sans); color: var(--ink3); white-space: nowrap; }
 .mark { font: 600 22px var(--serif); letter-spacing: -.01em; text-decoration: none; }
 nav a { font: 500 16px var(--sans); margin-left: 30px; color: var(--ink2); text-decoration: none; padding: 8px 0; border-bottom: 2px solid transparent; }
 nav a:hover { color: var(--ink); }
@@ -199,7 +201,7 @@ footer a { color: var(--ink2); }
 </head>
 <body>
 <header class="mast"><div class="wrap">
-  <a class="mark" href="#picks">OL·LAB</a>
+  <div class="brand"><a class="mark" href="#picks">OL·LAB</a><span class="upd" id="upd"></span></div>
   <nav id="nav" aria-label="Pages">
     <a href="#picks" data-p="picks">Picks</a>
     <a href="#matches" data-p="matches">Matches</a>
@@ -212,6 +214,7 @@ footer a { color: var(--ink2); }
 <main id="app" class="wrap" tabindex="-1"></main>
 <footer><div class="wrap">
   <p>Data: football-data.co.uk (results and odds, private non-commercial use), Transfermarkt (squad values, CC0), openfootball (calendars, public domain), Maxifoot (Ligue 1 calendar), Wikipedia (European fixtures and scores).</p>
+  <p id="refresh"></p>
   <p>Statistical estimates from a model, not betting advice. <a href="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS">Code and paper on GitHub</a>.</p>
 </div></footer>
 <script>
@@ -609,6 +612,8 @@ window.OLDATA = {"as_of":"2026-10-27","data_through":"2026-10-26","season":"2026
   });
   let timer; window.addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(drawCharts, 150); });
   window.addEventListener("hashchange", route);
+  $("#upd").textContent = `Updated ${fm(D.as_of, { day: "numeric", month: "short", year: "numeric" })}`;
+  $("#refresh").textContent = `Last updated ${fm(D.as_of, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, with results through ${dDay(D.data_through)}. The numbers are recomputed every Monday.`;
   route();
 })();
 

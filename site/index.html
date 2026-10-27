@@ -10,7 +10,7 @@
 </head>
 <body>
 <header class="mast"><div class="wrap">
-  <a class="mark" href="#picks">OL·LAB</a>
+  <div class="brand"><a class="mark" href="#picks">OL·LAB</a><span class="upd" id="upd"></span></div>
   <nav id="nav" aria-label="Pages">
     <a href="#picks" data-p="picks">Picks</a>
     <a href="#matches" data-p="matches">Matches</a>
@@ -23,6 +23,7 @@
 <main id="app" class="wrap" tabindex="-1"></main>
 <footer><div class="wrap">
   <p>Data: football-data.co.uk (results and odds, private non-commercial use), Transfermarkt (squad values, CC0), openfootball (calendars, public domain), Maxifoot (Ligue 1 calendar), Wikipedia (European fixtures and scores).</p>
+  <p id="refresh"></p>
   <p>Statistical estimates from a model, not betting advice. <a href="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS">Code and paper on GitHub</a>.</p>
 </div></footer>
 <script src="data.js"></script>

@@ -1,4 +1,6 @@
-"""Build the research-paper style report (LaTeX -> PDF).   Run:  python -m olpred.report_tex
+"""Build the research-paper style report (LaTeX -> PDF) from the latest data: reports/OL_ML_project_updated.pdf.
+The validated paper, written before Paris SG - Lyon (data through 21 Oct, snapshot 26 Oct), is kept as reports/OL_ML_project.pdf.
+Run:  python -m olpred.report_tex
 
 Needs pdflatex (texlive-latex-recommended, -extra, -fonts-recommended).  Numbers that depend on
 the data come from reports/tables/ and site/data.js, so the text cannot drift from the results."""
@@ -13,7 +15,7 @@ import pandas as pd
 
 REPORTS = Path("reports")
 TAB = REPORTS / "tables"
-OUT = REPORTS / "OL_ML_project.tex"
+OUT = REPORTS / "OL_ML_project_updated.tex"
 LEAGUES = {"E0": "Premier League", "SP1": "La Liga", "I1": "Serie A", "D1": "Bundesliga", "F1": "Ligue 1"}
 REPO = "github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS"
 
@@ -491,7 +493,7 @@ def main() -> None:
             print(r.stdout[-3000:])
             raise SystemExit("pdflatex failed")
     for ext in ("aux", "log", "out"):
-        (REPORTS / f"OL_ML_project.{ext}").unlink(missing_ok=True)
+        (REPORTS / f"OL_ML_project_updated.{ext}").unlink(missing_ok=True)
     print(OUT.with_suffix(".pdf"))
 
 

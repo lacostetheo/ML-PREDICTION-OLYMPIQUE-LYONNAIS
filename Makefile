@@ -51,7 +51,7 @@ europe:                  ## Champions League and Europa League winners (reads th
 # Refresh everything the website shows (~40 min, needs internet): results, team state, simulations, Europe, site
 weekly: features final ol simulate europe site
 
-report:                  ## paper-style PDF (needs pdflatex)
+report:                  ## paper rebuilt from the latest data: reports/OL_ML_project_updated.pdf (needs pdflatex)
 	$(PY) -m olpred.report_tex
 
 site:                    ## export data for the website and build a single-file version

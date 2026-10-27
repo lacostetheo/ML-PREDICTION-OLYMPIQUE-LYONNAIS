@@ -23,7 +23,7 @@
 |---|---|
 | 🌐 **Interactive site** (no install) | open **`site/ol-lab-standalone.html`** (one file: fonts and data included), or `site/index.html` from a clone. Published on GitHub Pages once merged to `main` — see [Website](#website). |
 | 📊 **Streamlit dashboard** | `make dashboard` |
-| 📄 **Research-paper style report (13 pages)** | [`reports/OL_ML_project.pdf`](reports/OL_ML_project.pdf) (built by `make report`, needs LaTeX); earlier long version: [`reports/final_report.pdf`](reports/final_report.pdf) |
+| 📄 **Research-paper style report (13 pages)** | [`reports/OL_ML_project.pdf`](reports/OL_ML_project.pdf): the paper as written **before Paris SG – Lyon** (data through 21 Oct, snapshot 26 Oct, so its forecast for that match is a genuine pre-match forecast). The same paper rebuilt with the latest data (`make report`, needs LaTeX): [`reports/OL_ML_project_updated.pdf`](reports/OL_ML_project_updated.pdf). Earlier long version: [`reports/final_report.pdf`](reports/final_report.pdf) |
 | 📓 **Notebooks** | [`notebooks/`](notebooks/) (executed, 01 → 08) |
 
 ## How it works

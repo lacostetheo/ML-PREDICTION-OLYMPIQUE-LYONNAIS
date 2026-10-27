@@ -2,6 +2,8 @@
 
 *A leakage-free, walk-forward study of football match probabilities, season simulation and market efficiency in the five major European leagues, with Olympique Lyonnais (OL) as the case study.*
 
+**🌐 [Open the website](https://raw.githack.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/main/site/ol-lab-standalone.html)** · **📄 [Read the paper (PDF)](reports/OL_ML_project.pdf)** · [Reproduce it](#reproducibility)
+
 [![tests](https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/actions/workflows/tests.yml/badge.svg)](.github/workflows/tests.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -21,7 +23,7 @@
 
 | | How |
 |---|---|
-| 🌐 **Interactive site** (no install) | open **`site/ol-lab-standalone.html`** (one file: fonts and data included), or `site/index.html` from a clone. Published on GitHub Pages once merged to `main` — see [Website](#website). |
+| 🌐 **Interactive site** (no install) | [open the site](https://raw.githack.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/main/site/ol-lab-standalone.html), or download **`site/ol-lab-standalone.html`** (one file: fonts and data included) and double-click it. Refreshed every Monday — see [Website](#website). |
 | 📊 **Streamlit dashboard** | `make dashboard` |
 | 📄 **Research-paper style report (13 pages)** | [`reports/OL_ML_project.pdf`](reports/OL_ML_project.pdf): the paper as written **before Paris SG – Lyon** (data through 21 Oct, snapshot 26 Oct, so its forecast for that match is a genuine pre-match forecast). The same paper rebuilt with the latest data (`make report`, needs LaTeX): [`reports/OL_ML_project_updated.pdf`](reports/OL_ML_project_updated.pdf). Earlier long version: [`reports/final_report.pdf`](reports/final_report.pdf) |
 | 📓 **Notebooks** | [`notebooks/`](notebooks/) (executed, 01 → 08) |

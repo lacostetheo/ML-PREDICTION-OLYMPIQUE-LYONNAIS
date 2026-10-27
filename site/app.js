@@ -44,7 +44,8 @@
   function p3(m, focus) {
     const { h, d, a, fav } = split3(m.p);
     const sh = m.h === focus ? "sx" : fav === "h" ? "sf" : "so", sa = m.a === focus ? "sx" : fav === "a" ? "sf" : "so", sdr = fav === "d" ? "sf" : "sd";
-    return `<span class="p3"><span class="nums"><span class="${fav === "h" ? "fav" : ""}">${pr(h)}%</span><span class="${fav === "d" ? "fav" : ""}">${pr(d)}%</span><span class="${fav === "a" ? "fav" : ""}">${pr(a)}%</span></span>` +
+    const w = (x) => `style="flex:${Math.max(x, 0.001).toFixed(4)} 1 0"`;
+    return `<span class="p3"><span class="nums"><span ${w(h)}${fav === "h" ? ' class="fav"' : ""}><b>${pr(h)}%</b></span><span ${w(d)}${fav === "d" ? ' class="fav"' : ""}><b>${pr(d)}%</b></span><span ${w(a)}${fav === "a" ? ' class="fav"' : ""}><b>${pr(a)}%</b></span></span>` +
       `<span class="seg"><i class="${sh}" style="width:${(h * 100).toFixed(1)}%"></i><i class="${sdr}" style="width:${(d * 100).toFixed(1)}%"></i><i class="${sa}" style="width:${(a * 100).toFixed(1)}%"></i></span></span>`;
   }
   function fxRow(m, o = {}) {
@@ -69,9 +70,9 @@
     const sv = (i) => (i.sv === null ? "n/a" : "×" + Math.exp(i.sv).toFixed(2));
     const mk = (D.fixtures[c].find((m) => m.h === h && m.a === a) || {}).mk;
     return `<div class="in"><div><h3>Why this forecast</h3><div class="why">${why}</div>
-      <p class="small" style="margin:12px 0 0">Bars to the right favour ${nm(h)}, to the left ${nm(a)}.</p></div>
+      <p class="small" style="margin:12px 0 0">Bars to the right favour ${nm(h)}, to the left ${nm(a)}. The Elo gap includes 65 points for the home side.</p></div>
       <div><h3>The two teams</h3><table><thead><tr><th></th><th class="r">${nm(h)}</th><th class="r">${nm(a)}</th></tr></thead><tbody>
-        <tr><td>Elo rating</td><td class="r">${Math.round(ih.elo).toLocaleString("en-GB")}</td><td class="r">${Math.round(ia.elo).toLocaleString("en-GB")}</td></tr>
+        <tr><td><a class="gl" href="#method" title="Strength score, see How it works">Elo rating</a></td><td class="r">${Math.round(ih.elo).toLocaleString("en-GB")}</td><td class="r">${Math.round(ia.elo).toLocaleString("en-GB")}</td></tr>
         <tr><td>Points, last 10</td><td class="r">${ih.pts10.toFixed(1)}</td><td class="r">${ia.pts10.toFixed(1)}</td></tr>
         <tr><td>Goals, last 10</td><td class="r">${ih.gf10.toFixed(1)}–${ih.ga10.toFixed(1)}</td><td class="r">${ia.gf10.toFixed(1)}–${ia.ga10.toFixed(1)}</td></tr>
         <tr><td>Squad value</td><td class="r">${sv(ih)}</td><td class="r">${sv(ia)}</td></tr></tbody></table>
@@ -208,7 +209,7 @@
     const sv = info.sv === null ? "" : ` · squad value ×${Math.exp(info.sv).toFixed(2)} the league average`;
     const teamsSorted = lg.teams.slice().sort((a, b) => (D.display[a] || a).localeCompare(D.display[b] || b));
     return head(`${esc(lg.name)} · after ${s[11]} rounds`, nm(team),
-      `${s[10]} points · Elo ${Math.round(info.elo).toLocaleString("en-GB")} (${ordNum(info.elo_rank)} of ${lg.teams.length})${sv}`) +
+      `${s[10]} points · <a class="gl" href="#method">Elo</a> ${Math.round(info.elo).toLocaleString("en-GB")} (${ordNum(info.elo_rank)} of ${lg.teams.length})${sv}`) +
       `<div class="controls"><label class="sel">League <select id="sel-tl">${LEAGUES.map((l) => `<option value="${l}" ${l === L ? "selected" : ""}>${esc(D.leagues[l].name)}</option>`).join("")}</select></label>
        <label class="sel">Team <select id="sel-tt">${teamsSorted.map((t) => `<option value="${esc(t)}" ${t === team ? "selected" : ""}>${nm(t)}</option>`).join("")}</select></label></div>` +
       `<div class="figs">${figs.map(([v, l]) => `<div class="fig"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>` +
@@ -236,6 +237,24 @@
   }
 
   /* ------------------------------------------------------------------ METHOD */
+  function eloSection() {
+    const E = (rh, ra) => 1 / (1 + Math.pow(10, -(rh - ra + 65) / 400)), r0 = (x) => Math.round(x).toLocaleString("en-GB");
+    const m = teamFixtures(FOCUS).find((x) => isLeague(x.comp)), lg = m && D.leagues[m.comp];
+    let ex = "";
+    if (m) {
+      const rh = Math.round(lg.info[m.h].elo), ra = Math.round(lg.info[m.a].elo), e = E(rh, ra);
+      ex = `<p><b>Example.</b> ${nm(m.h)} (${r0(rh)}) host ${nm(m.a)} (${r0(ra)}) on ${fm(m.d, { day: "numeric", month: "long" })}. The gap is ${r0(rh - ra)} points; with the 65 points for playing at home it becomes ${r0(rh - ra + 65)}, which gives ${nm(m.h)} an expected score of ${pc(e)}. A win barely moves its rating, because it was expected; a defeat would cost it a lot.</p>`;
+    }
+    return `<section class="block"><div class="prose"><h2>Elo: one number for team strength</h2>
+        <p>Elo is a strength score borrowed from chess. Every club has one. It rises after a win and falls after a defeat, by a lot when the opponent was stronger than expected and by little when it was weaker. A club starts a league at 1,500; a promoted club starts 75 points lower. Each league has its own scale, so a Premier League 1,600 and a Ligue 1 1,600 cannot be compared.</p>
+        <p>Before a match, the gap between the two ratings gives an expected score for the home side (a win counts 1, a draw one half, a defeat 0):</p>
+        <div class="formula">E = 1 / (1 + 10<sup>−(R<sub>home</sub> − R<sub>away</sub> + 65) / 400</sup>)</div>
+        <p>The <b>+65</b> is the home advantage: the home side is treated as 65 rating points stronger. Against an equal opponent that is an expected score of about 59%; in the data, home sides collect 57% of the points on offer.</p>
+        <p>After the match, the rating moves by the surprise, the gap between the actual result S and the expected score E:</p>
+        <div class="formula">R′ = R + 20 × (1 + ln(1 + |goal difference|)) × (S − E)</div>
+        <p>The 20 sets how fast ratings react, and the logarithm makes a 4–0 count more than a 1–0 without letting it dominate. Between seasons every rating moves a quarter of the way back to the league average. The rating used for a match is always the one from before it was played.</p>${ex}
+        <p>Elo is the input the model leans on most, ahead of squad market value. Everything else adds little once the two are known.</p></div></section>`;
+  }
   function pageMethod() {
     const A = D.arena.final, names = [["LogReg (final)", "Logistic regression (chosen)"], ["Gradient boosting", "Gradient boosting"], ["MLP deep (5 seeds)", "Neural network"], ["Ensemble LogReg+GB+MLP", "Ensemble of the three"], ["Elo (LogReg)", "Elo"], ["Class frequency (naive)", "Ignoring team quality"], ["Bookmaker Bet365 (reference)", "Bookmaker (Bet365)"]];
     const tbl = `<div class="tw"><table><thead><tr><th>Forecaster</th><th class="r">Log loss</th><th class="r">95% interval</th><th class="r">Right</th></tr></thead><tbody>${names.map(([k, l]) => `<tr class="${k === "LogReg (final)" ? "me" : ""}"><td class="t">${l}</td><td class="r"><b>${A[k].log_loss.toFixed(3)}</b></td><td class="r">${A[k].lo.toFixed(3)}–${A[k].hi.toFixed(3)}</td><td class="r">${pc(A[k].accuracy, 1)}</td></tr>`).join("")}</tbody></table></div>`;
@@ -245,6 +264,7 @@
         <p>Each match gets three probabilities, home win, draw and away win, from a multinomial logistic regression on 100 inputs: Elo rating, squad market value, recent results and shots, schedule. It is refitted every season on all past matches.</p>
         <div class="formula">P(k | x) = exp(wₖ · x + bₖ) / Σⱼ exp(wⱼ · x + bⱼ)</div>
         <p>Random forests, gradient boosting, support-vector machines and neural networks were tested too. None beat it significantly, so the simplest and most explainable model stays.</p></div></section>` +
+      eloSection() +
       `<section class="block"><h2>How good is it?</h2><p class="lead">Since ${fm(D.prev.from, { month: "long", year: "numeric" })}, on ${D.prev.n_total.toLocaleString("en-GB")} matches, the chosen model scores ${lr.toFixed(3)} (log loss, lower is better). The bookmaker scores ${bk.toFixed(3)}: better, and adding the model to its prices adds nothing.</p>
         <p class="chart-t">Average log loss over the test matches, as they accumulate</p><div class="chart ar" data-chart="arena"></div>
         <div class="legend"><span><i style="background:${ACCENT}"></i>Logistic regression (chosen)</span><span><i style="background:${MID}"></i>Boosting, neural network, ensemble</span><span><i style="background:${INK}"></i>Bookmaker</span><span><i style="background:${GRAY}"></i>Elo, and ignoring team quality</span></div>${tbl}</section>` +
@@ -271,7 +291,7 @@
     const hot = lg.slots.champions_league, rel = lg.slots.relegation;
     const W = Math.max(280, Math.floor(el.clientWidth)), H = W < 480 ? 290 : 330, ml = 44, mr = 6, mt = 64, mb = 34;
     const pw = W - ml - mr, ph = H - mt - mb, slot = pw / n, bw = Math.min(24, slot * 0.62), max = Math.max(...probs);
-    const [step, ymax] = niceStep(max), Y = (v) => mt + ph * (1 - v / ymax), y0 = Y(0);
+    const [step, ymax] = niceStep(max * 1.15), Y = (v) => mt + ph * (1 - v / ymax), y0 = Y(0);
     let s = "";
     for (let g = 0; g <= ymax + 1e-9; g += step) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(g)}" y2="${Y(g)}" stroke="${RULE}"/><text x="${ml - 8}" y="${Y(g) + 5}" text-anchor="end" font-size="14" fill="${INK3}">${Math.round(g * 100)}%</text>`;
     const bar = (x, y, w, r = 4) => { r = Math.min(r, w / 2, y0 - y); return `M${x},${y0} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y0} Z`; };
@@ -281,13 +301,13 @@
       if (slot >= 22 || i % 2 === 0) s += `<text x="${x + bw / 2}" y="${H - mb + 24}" text-anchor="middle" font-size="14" fill="${INK3}">${i + 1}</text>`;
     });
     const im = probs.indexOf(max);
-    s += `<text x="${ml + im * slot + slot / 2}" y="${Y(max) - 8}" text-anchor="middle" font-size="15" font-weight="600" fill="${INK}">${pr(max)}%</text>`;
-    const bracket = (i0, i1, label, anchor, up) => {
-      const pmax = Math.max(...probs.slice(i0, i1 + 1)), x1 = ml + i0 * slot + (slot - bw) / 2, x2 = ml + i1 * slot + (slot - bw) / 2 + bw, yb = Y(pmax) - up;
-      return `<path d="M${x1},${yb + 7} L${x1},${yb} L${x2},${yb} L${x2},${yb + 7}" fill="none" stroke="${anchor === "start" ? ACCENT : MID}" stroke-width="2"/><text x="${anchor === "start" ? x1 : x2}" y="${yb - 9}" text-anchor="${anchor}" font-size="15" font-weight="600" fill="${INK}">${label}</text>`;
+    s += `<text x="${ml + im * slot + slot / 2}" y="${Y(max) - 8}" text-anchor="middle" font-size="15" font-weight="600" fill="${INK}" stroke="${PAPER}" stroke-width="4" paint-order="stroke">${pr(max)}%</text>`;
+    const bracket = (i0, i1, label) => {                // sits above the top gridline, so it never crosses a bar, a label or a line
+      const x1 = ml + i0 * slot + (slot - bw) / 2, x2 = ml + i1 * slot + (slot - bw) / 2 + bw, yb = mt - 24;
+      return `<path d="M${x1},${yb + 8} L${x1},${yb} L${x2},${yb} L${x2},${yb + 8}" fill="none" stroke="${ACCENT}" stroke-width="2"/><text x="${x1}" y="${yb - 10}" font-size="15" font-weight="600" fill="${INK}">${label}</text>`;
     };
     const pHot = probs.slice(0, hot).reduce((a, b) => a + b, 0);
-    s += bracket(0, hot - 1, `Champions League: ${pc(pHot)}`, "start", 36);
+    s += bracket(0, hot - 1, `Champions League: ${pc(pHot)}`);
     el.innerHTML = svg(W, H, s, `Distribution of the final position of ${D.display[team] || team}`);
   }
   function posLegend(L, team) {
@@ -322,9 +342,11 @@
     const line = (k, col, w) => `<path d="${cur(k).map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round"><title>${k}</title></path>`;
     s += line("Class frequency (naive)", GRAY, 1.5) + line("Elo (LogReg)", MID, 1.5) + line("Gradient boosting", MID, 1.5) + line("MLP deep (5 seeds)", MID, 1.5) + line("Ensemble LogReg+GB+MLP", MID, 1.5) + line("LogReg (final)", ACCENT, 2.5) + line("Bookmaker Bet365 (reference)", INK, 2.5);
     if (wide) {
-      const end = (k) => cur(k)[xs.length - 1], lab = (v, y, t) => `<text x="${W - mr + 12}" y="${y + 5}" font-size="15" fill="${INK}">${t} <tspan font-weight="600">${v.toFixed(3)}</tspan></text>`;
-      s += lab(end("Bookmaker Bet365 (reference)"), Y(end("Bookmaker Bet365 (reference)")) + 9, "Bookmaker") + lab(end("LogReg (final)"), Y(end("LogReg (final)")) - 9, "Our models") +
-        lab(end("Elo (LogReg)"), Y(end("Elo (LogReg)")), "Elo") + lab(end("Class frequency (naive)"), Y(end("Class frequency (naive)")), "No skill");
+      const end = (k) => cur(k)[xs.length - 1];
+      const L = [["Bookmaker Bet365 (reference)", "Bookmaker"], ["LogReg (final)", "Our models"], ["Elo (LogReg)", "Elo"], ["Class frequency (naive)", "No skill"]]
+        .map(([k, t]) => ({ t, v: end(k), y: Y(end(k)) })).sort((p, q) => p.y - q.y);
+      for (let i = 1; i < L.length; i++) L[i].y = Math.max(L[i].y, L[i - 1].y + 20);          // keep end labels 20 px apart
+      s += L.map((o) => `<text x="${W - mr + 12}" y="${o.y + 5}" font-size="15" fill="${INK}">${o.t} <tspan font-weight="600">${o.v.toFixed(3)}</tspan></text>`).join("");
     }
     el.innerHTML = svg(W, H, s, "Cumulative log loss of the forecasters over the test matches");
   }

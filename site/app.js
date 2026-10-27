@@ -6,8 +6,8 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const S = { league: "F1", team: "Lyon", tab: "home", opp: null, venue: "home", custom: {} };
-  const C = { blue: "#4f9be8", indigo: "#3a1fa8", navy: "#190a50", cyan: "#5bc8ef", green: "#4caf6a", coral: "#ef6b6b", amber: "#f2a33a", yellow: "#f5c542",
-    violet: "#7c5cff", grey: "#9aa3c0", muted: "#8683ab", grid: "#e8ebf4", ink: "#241c5a", draw: "#cdd2e8" };
+  const C = { blue: "#2f5d8c", indigo: "#1f2933", navy: "#1f2933", cyan: "#2f5d8c", green: "#2e7d4f", coral: "#b4443c", amber: "#a8741a", yellow: "#a8741a",
+    violet: "#5b6b7c", grey: "#9aa3ad", muted: "#77808a", grid: "#e1e1db", ink: "#1d242c", draw: "#c9ccd0" };
   const LEAGUE_ORDER = ["E0", "SP1", "I1", "D1", "F1"];
 
   const pct = (x) => Math.round(x * 100) + "%";
@@ -70,17 +70,17 @@
     const ol = sumOf("F1", "Lyon"), olp = D.leagues.F1.sim.pos_probs.Lyon, gap = fin.log_loss - bk.log_loss;
     const mx = Math.max(...olp);
     $("#kpis").innerHTML = `
-      <div class="card"><div class="kpi"><div><div class="val">29,239</div><div class="lab">Matches analysed</div></div><div class="tile t-yellow">${ICON.chart}</div></div><div class="foot flat">5 leagues · 2010 → 2026</div></div>
-      <div class="card"><div class="kpi"><div><div class="val">${fin.log_loss.toFixed(3)}</div><div class="lab">Test log loss (lower = better)</div></div><div class="tile t-cyan">${ICON.target}</div></div><div class="foot down">▲ ${gap.toFixed(3)} behind the bookmaker (${bk.log_loss.toFixed(3)})</div></div>
-      <div class="card"><div class="kpi"><div><div class="val">${ol[0].toFixed(1)}</div><div class="lab">OL expected points · Ligue 1</div></div><div class="tile t-green">${ICON.ball}</div></div><div class="foot up">80 % interval ${Math.round(ol[1])}–${Math.round(ol[2])}</div></div>
-      <div class="card"><div class="kpi"><div><div class="val">${pct(ol[6])}</div><div class="lab">OL chance of top 4</div></div><div class="tile t-violet">${ICON.pie}</div></div>
+      <div class="card"><div class="kpi"><div><div class="val">29,239</div><div class="lab">Matches analysed</div></div></div><div class="foot flat">5 leagues · 2010 → 2026</div></div>
+      <div class="card"><div class="kpi"><div><div class="val">${fin.log_loss.toFixed(3)}</div><div class="lab">Test log loss (lower = better)</div></div></div><div class="foot down">${gap.toFixed(3)} behind the bookmaker (${bk.log_loss.toFixed(3)})</div></div>
+      <div class="card"><div class="kpi"><div><div class="val">${ol[0].toFixed(1)}</div><div class="lab">OL expected points · Ligue 1</div></div></div><div class="foot up">80 % interval ${Math.round(ol[1])}–${Math.round(ol[2])}</div></div>
+      <div class="card"><div class="kpi"><div><div class="val">${pct(ol[6])}</div><div class="lab">OL chance of top 4</div></div></div>
         <div class="minibars" aria-hidden="true">${olp.map((v) => `<i style="height:${Math.max(6, v / mx * 100)}%"></i>`).join("")}</div></div>`;
 
     $("#top3").innerHTML = LEAGUE_ORDER.map((L, i) => {
       const r = top3(L), champ = r[0];
       return `<article class="card lg c${i}"><div class="head"><div class="lname">${D.leagues[L].name}</div><div class="champ">${champ.t}</div>
-        <div class="cprob">projected champion · title ${pct(champ.s[4])}</div>${wave(D.leagues[L].info[champ.t].elo_series)}</div>
-        <div class="body">${r.map((x, k) => `<div class="row" data-go="${L}|${x.t}"><span class="medal m${k + 1}">${k + 1}</span><div class="tn">${x.t}<span class="ts">${x.s[0].toFixed(0)} pts · title ${pct(x.s[4])}</span></div><span class="pill" title="chance of a top-3 finish">${pct(x.p3)}</span></div>`).join("")}</div></article>`;
+        <div class="cprob">Projected champion · title ${pct(champ.s[4])}</div></div>
+        <div class="body">${r.map((x, k) => `<div class="row" data-go="${L}|${x.t}"><span class="medal">${k + 1}</span><div class="tn">${x.t}<span class="ts">${x.s[0].toFixed(0)} pts · title ${pct(x.s[4])}</span></div><span class="pill" title="chance of a top-3 finish">${pct(x.p3)}</span></div>`).join("")}</div></article>`;
     }).join("");
 
     // title race of the selected league
@@ -91,11 +91,11 @@
     for (let g = 0; g <= 4; g++) { const y = mt + (H - mt - mb) * (1 - g / 4); svg += `<line x1="${ml}" x2="${W - 8}" y1="${y}" y2="${y}" stroke="${C.grid}"/><text x="${ml - 6}" y="${y + 3}" fill="${C.muted}" font-size="10" text-anchor="end">${g * 25}</text>`; }
     rows.forEach(([t, s], i) => {
       const x0 = ml + i * bw + bw * 0.18, w = bw * 0.30, Y = (v) => mt + (H - mt - mb) * (1 - v);
-      svg += `<rect x="${x0}" y="${Y(s[4])}" width="${w}" height="${H - mb - Y(s[4])}" rx="3" fill="${C.blue}" opacity=".75"><title>${t}: title ${pct1(s[4])}</title></rect>`;
+      svg += `<rect x="${x0}" y="${Y(s[4])}" width="${w}" height="${H - mb - Y(s[4])}" rx="3" fill="${C.blue}" opacity=".6"><title>${t}: title ${pct1(s[4])}</title></rect>`;
       svg += `<rect x="${x0 + w + 3}" y="${Y(s[6])}" width="${w}" height="${H - mb - Y(s[6])}" rx="3" fill="${C.indigo}"><title>${t}: top 4 ${pct1(s[6])}</title></rect>`;
       svg += `<text x="${x0 + w}" y="${H - mb + 16}" fill="${C.ink}" font-size="10.5" text-anchor="middle" font-weight="600">${t.length > 11 ? t.slice(0, 10) + "…" : t}</text>`;
     });
-    svg += `<g font-size="10.5" fill="${C.muted}"><rect x="${ml}" y="${H - 16}" width="10" height="10" rx="2" fill="${C.blue}" opacity=".75"/><text x="${ml + 15}" y="${H - 7}">win the league</text><rect x="${ml + 120}" y="${H - 16}" width="10" height="10" rx="2" fill="${C.indigo}"/><text x="${ml + 135}" y="${H - 7}">finish top 4</text><text x="${W - 8}" y="${H - 7}" text-anchor="end">probability, %</text></g></svg>`;
+    svg += `<g font-size="10.5" fill="${C.muted}"><rect x="${ml}" y="${H - 16}" width="10" height="10" rx="2" fill="${C.blue}" opacity=".6"/><text x="${ml + 15}" y="${H - 7}">win the league</text><rect x="${ml + 120}" y="${H - 16}" width="10" height="10" rx="2" fill="${C.indigo}"/><text x="${ml + 135}" y="${H - 7}">finish top 4</text><text x="${W - 8}" y="${H - 7}" text-anchor="end">probability, %</text></g></svg>`;
     $("#race").innerHTML = svg;
 
     // upcoming round of the selected league
@@ -121,7 +121,27 @@
       $("#ucl-note").textContent = `${U.played} of ${U.total} league-phase matches in the data. No clear favourite: the six leading clubs are within a few points of each other.`;
     }
     $("#ucl").innerHTML = tbl([...all].sort((a, b) => b.cl - a.cl).slice(0, 14), "cl", C.blue);
-    $("#uel").innerHTML = tbl([...all].sort((a, b) => b.eu - a.eu).slice(0, 14), "eu", C.violet);
+    $("#uel").innerHTML = tbl([...all].sort((a, b) => b.eu - a.eu).slice(0, 14), "eu", C.grey);
+  }
+
+  /* ------------------------------------------------------------------ PREVIOUS RESULTS */
+  function renderPrev() {
+    const P = D.prev, NAMES = ["Away win", "Draw", "Home win"];
+    $("#prev-asof").textContent = `Matches up to ${fmtDate(P.last)}`;
+    $("#prev-kpis").innerHTML = Object.entries(P.summary).map(([k, v]) => `<div class="card"><div class="lab" style="color:var(--muted);font-size:12.5px">${k}</div>
+      <div class="kpi"><div class="val">${(v.acc * 100).toFixed(0)}%</div></div><div class="lab" style="font-size:12.5px">correct outcome · ${v.n} matches</div>
+      <div class="foot flat" style="font-size:12px;margin-top:8px">Log loss: model <b>${v.ll.toFixed(3)}</b> · bookmaker ${v.ll_book.toFixed(3)} · no-skill ${v.ll_naive.toFixed(3)}</div></div>`).join("");
+    $("#prev-cal").innerHTML = `<table><thead><tr><th>Model's top pick said</th><th>Matches</th><th>Average said</th><th>Came true</th></tr></thead><tbody>` +
+      P.calibration.map((b) => `<tr><td>${b.lo ? Math.round(b.lo * 100) : 0}–${Math.round(b.hi * 100)}%</td><td class="num">${b.n}</td><td class="num">${pct(b.said)}</td><td class="num">${pct(b.came_true)}</td></tr>`).join("") + `</tbody></table>`;
+    const sel = $("#prev-league");
+    if (!sel.options.length) { sel.innerHTML = `<option value="">All leagues</option>` + LEAGUE_ORDER.map((L) => `<option value="${L}">${D.leagues[L].name}</option>`).join(""); sel.addEventListener("change", renderPrev); }
+    const L = sel.value, rows = P.rows.filter((r) => !L || r[1] === L).slice(0, 80);
+    $("#prev-table").innerHTML = `<table><thead><tr><th>Date</th><th>Match</th><th>Score</th><th>Forecast: home / draw / away</th><th>Top pick</th><th>Result</th></tr></thead><tbody>` +
+      rows.map(([d, lg, h, a, hg, ag, y, p]) => {
+        const best = p.indexOf(Math.max(...p)), ok = best === y, said = p[y];
+        const upset = !ok && said < 0.2 ? ` <span style="color:var(--muted);font-weight:400">(rated ${pct(said)})</span>` : "";
+        return `<tr><td class="num">${d.slice(5)}</td><td>${h} – ${a}</td><td class="num"><b>${hg}–${ag}</b></td><td class="num">${pct(p[2])} / ${pct(p[1])} / ${pct(p[0])}</td><td class="pk">${NAMES[best]} ${pct(p[best])}</td><td class="${ok ? "ok" : "ko"}">${ok ? "Right" : "Wrong"}${upset}</td></tr>`;
+      }).join("") + `</tbody></table>`;
   }
 
   /* ------------------------------------------------------------------ MATCH LAB */
@@ -359,8 +379,8 @@
   /* ------------------------------------------------------------------ wiring */
   function showTab(t) {
     S.tab = t; $$(".tab").forEach((s) => s.classList.toggle("on", s.id === "tab-" + t)); $$(".nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
-    $("#picker").style.visibility = t === "arena" || t === "model" ? "hidden" : "visible";
-    if (t === "home") renderHome(); if (t === "lab") renderLab(); if (t === "mc") renderMC(); if (t === "arena") renderArena(); if (t === "model") renderModel();
+    $("#picker").style.visibility = t === "arena" || t === "model" || t === "prev" ? "hidden" : "visible";
+    if (t === "home") renderHome(); if (t === "prev") renderPrev(); if (t === "lab") renderLab(); if (t === "mc") renderMC(); if (t === "arena") renderArena(); if (t === "model") renderModel();
     history.replaceState(null, "", "#" + t);
   }
   function onTeamChange() { resetMatchDefaults(); showTab(S.tab); }
@@ -382,7 +402,7 @@
     $("#ar-reset").addEventListener("click", () => { AR.playing = false; cancelAnimationFrame(AR.raf); AR.t = AR.start; $("#ar-play").textContent = "▶ Play"; arDraw(); });
     $("#ar-scrub").addEventListener("input", (e) => { AR.playing = false; AR.t = +e.target.value; $("#ar-play").textContent = "▶ Play"; arDraw(); });
     window.addEventListener("resize", () => { if (S.tab === "lab") drawSpark(info().elo_series); if (S.tab === "arena") arDraw(); if (S.tab === "model") nnStart(); });
-    const hash = location.hash.replace("#", ""); showTab(["home", "lab", "mc", "arena", "model"].includes(hash) ? hash : "home");
+    const hash = location.hash.replace("#", ""); showTab(["home", "prev", "lab", "mc", "arena", "model"].includes(hash) ? hash : "home");
   }
   init();
 })();

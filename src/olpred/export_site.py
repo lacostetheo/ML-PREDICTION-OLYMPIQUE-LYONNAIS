@@ -54,6 +54,39 @@ def pair_table(league: str, teams: list[str], state, lr, boot, sigma, fam):
     return pairs
 
 
+def previous_results(n_recent: int = 150) -> dict:
+    """Out-of-sample (walk-forward) forecasts vs what happened, most recent matches first.
+    These are re-computed after the fact with only the information available before each match;
+    they are not forecasts that were published in advance."""
+    d = pd.read_parquet(TABLES / "final_test_predictions.parquet").sort_values(["date", "match_id"])
+    M, B = "LogReg (final)", "Bookmaker Bet365 (reference)"
+    P = d[[f"{M}|away", f"{M}|draw", f"{M}|home"]].to_numpy()
+    Q = d[[f"{B}|away", f"{B}|draw", f"{B}|home"]].to_numpy()
+    F = d[[f"Class frequency (naive)|away", f"Class frequency (naive)|draw", f"Class frequency (naive)|home"]].to_numpy()
+    y = d["y"].to_numpy()
+    ll = lambda A: -np.log(np.clip(A[np.arange(len(y)), y], 1e-15, 1))
+    hit = P.argmax(1) == y
+    last = d["date"].max()
+
+    def summary(mask):
+        m = mask.to_numpy() if hasattr(mask, "to_numpy") else mask
+        return {"n": int(m.sum()), "acc": round(float(hit[m].mean()), 4), "ll": round(float(ll(P)[m].mean()), 4),
+                "ll_book": round(float(ll(Q)[m].mean()), 4), "ll_naive": round(float(ll(F)[m].mean()), 4)}
+    windows = {"Last 7 days": d["date"] > last - pd.Timedelta(days=7), "Last 30 days": d["date"] > last - pd.Timedelta(days=30),
+               "Whole test period (2023 → Oct 2026)": d["date"] >= d["date"].min()}
+    conf = P.max(1)
+    bins = []
+    for lo, hi in [(0, .4), (.4, .5), (.5, .6), (.6, .7), (.7, 1.01)]:
+        m = (conf >= lo) & (conf < hi)
+        bins.append({"lo": lo, "hi": min(hi, 1), "n": int(m.sum()), "said": round(float(conf[m].mean()), 3),
+                     "came_true": round(float(hit[m].mean()), 3)})
+    r = d.tail(n_recent).iloc[::-1]
+    rows = [[x.date.strftime("%Y-%m-%d"), x.league, x.home, x.away, int(x.home_goals), int(x.away_goals), int(x.y),
+             [round(float(v), 3) for v in P[i]]] for x, i in zip(r.itertuples(), range(len(d) - 1, len(d) - 1 - len(r), -1))]
+    return {"last": last.strftime("%Y-%m-%d"), "summary": {k: summary(v) for k, v in windows.items()},
+            "calibration": bins, "rows": rows}
+
+
 def main() -> None:
     SITE.mkdir(exist_ok=True)
     prod = joblib.load(Path("models_store") / "production.joblib")
@@ -154,6 +187,8 @@ def main() -> None:
                           "hi": float(table.loc[m, "log_loss_ci_high"]), "accuracy": float(table.loc[m, "accuracy"]),
                           "brier": float(table.loc[m, "brier"])} for m in models}
     out["arena"] = arena
+
+    out["prev"] = previous_results()
 
     ucl = TABLES / "europe_ucl_probabilities.csv"
     if ucl.exists():  # Champions League winner model (python -m olpred.europe_sim)

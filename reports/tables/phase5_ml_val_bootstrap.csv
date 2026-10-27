@@ -1,0 +1,29 @@
+model,vs,diff,ci_low,ci_high,significant
+Class frequency (naive),Elo (LogReg),0.0742,0.0623,0.0863,True
+Class frequency (naive),LogReg: all features,0.0845,0.0713,0.098,True
+Class frequency (naive),Bookmaker Bet365 (reference),0.0923,0.0807,0.1039,True
+Elo (LogReg),Class frequency (naive),-0.0742,-0.0863,-0.0623,True
+Elo (LogReg),LogReg: all features,0.0103,0.0052,0.0155,True
+Elo (LogReg),Bookmaker Bet365 (reference),0.0181,0.0125,0.0234,True
+LogReg: all features,Class frequency (naive),-0.0845,-0.098,-0.0713,True
+LogReg: all features,Elo (LogReg),-0.0103,-0.0155,-0.0052,True
+LogReg: all features,Bookmaker Bet365 (reference),0.0078,0.0024,0.013,True
+Random Forest,Class frequency (naive),-0.0809,-0.093,-0.0688,True
+Random Forest,Elo (LogReg),-0.0068,-0.0107,-0.0027,True
+Random Forest,LogReg: all features,0.0035,-0.0007,0.0076,False
+Random Forest,Bookmaker Bet365 (reference),0.0114,0.0067,0.0158,True
+Gradient Boosting,Class frequency (naive),-0.0815,-0.0939,-0.069,True
+Gradient Boosting,Elo (LogReg),-0.0073,-0.0119,-0.0025,True
+Gradient Boosting,LogReg: all features,0.003,-0.0012,0.007,False
+Gradient Boosting,Bookmaker Bet365 (reference),0.0108,0.0057,0.0156,True
+SVM (RBF),Class frequency (naive),-0.0605,-0.0707,-0.0504,True
+SVM (RBF),Elo (LogReg),0.0136,0.008,0.0192,True
+SVM (RBF),LogReg: all features,0.0239,0.0171,0.0308,True
+SVM (RBF),Bookmaker Bet365 (reference),0.0318,0.0258,0.0375,True
+Bookmaker Bet365 (reference),Class frequency (naive),-0.0923,-0.1039,-0.0807,True
+Bookmaker Bet365 (reference),Elo (LogReg),-0.0181,-0.0234,-0.0125,True
+Bookmaker Bet365 (reference),LogReg: all features,-0.0078,-0.013,-0.0024,True
+Blend: LogReg + Gradient Boosting,Class frequency (naive),-0.0848,-0.0976,-0.0721,True
+Blend: LogReg + Gradient Boosting,Elo (LogReg),-0.0106,-0.015,-0.006,True
+Blend: LogReg + Gradient Boosting,LogReg: all features,-0.0003,-0.0024,0.0018,False
+Blend: LogReg + Gradient Boosting,Bookmaker Bet365 (reference),0.0076,0.0027,0.0122,True

@@ -1,0 +1,13 @@
+dimension,value,rank,of,percentile
+Elo rating,1602.456,6,18,70.588
+"Recent form: points/match, last 10",1.4,10,18,47.059
+"Recent attack: goals scored, last 10",1.4,10,18,47.059
+"Recent attack: shots on target, last 10",4.6,9,18,52.941
+"Recent defence: goals conceded, last 10",1.3,7,18,64.706
+"Recent defence: shots on target against, last 10",4.9,11,18,41.176
+Squad value: attackers,120.45,5,17,75.0
+Squad value: midfielders,119.0,5,17,75.0
+Squad value: defenders,54.7,10,17,43.75
+Squad value: goalkeepers,10.5,6,17,68.75
+Squad depth (value of players 12-22),79.5,5,17,75.0
+Squad value: total,304.65,5,17,75.0

@@ -1,0 +1,91 @@
+md,date,time,home,away,p_away,p_draw,p_home
+4,2026-11-05,18:45,Milan,Ferencváros,0.0304,0.0997,0.8699
+4,2026-11-05,18:45,Sparta Prague,Bournemouth,0.567,0.226,0.2069
+4,2026-11-05,18:45,Crystal Palace,TSG Hoffenheim,0.2072,0.2293,0.5635
+4,2026-11-05,18:45,Lillestrøm,Viktoria Plzeň,0.5145,0.2432,0.2423
+4,2026-11-05,18:45,NEC,Omonia,0.1267,0.1876,0.6857
+4,2026-11-05,18:45,Levski Sofia,Jagiellonia Białystok,0.4108,0.2464,0.3428
+4,2026-11-05,18:45,Real Sociedad,Lyon,0.3113,0.247,0.4416
+4,2026-11-05,18:45,Anderlecht,Red Bull Salzburg,0.3582,0.2479,0.3939
+4,2026-11-05,18:45,Rennes,Olympiacos,0.2101,0.2272,0.5627
+4,2026-11-05,21:00,AZ,Juventus,0.471,0.2527,0.2764
+4,2026-11-05,21:00,Bayer Leverkusen,Marseille,0.2549,0.2345,0.5106
+4,2026-11-05,21:00,Celtic,Beşiktaş,0.2992,0.2424,0.4584
+4,2026-11-05,21:00,Hapoel Be'er Sheva,OFI,0.2854,0.2418,0.4728
+4,2026-11-05,21:00,Celta Vigo,Union Saint-Gilloise,0.2685,0.253,0.4785
+4,2026-11-05,21:00,Torreense,Ararat-Armenia,0.2854,0.2418,0.4728
+4,2026-11-05,21:00,Sturm Graz,Celje,0.1527,0.2019,0.6454
+4,2026-11-05,21:00,Benfica,Lech Poznań,0.0796,0.1504,0.77
+4,2026-11-05,21:00,Sunderland,Dinamo Zagreb,0.1396,0.2174,0.643
+5,2026-11-26,18:45,Beşiktaş,Hapoel Be'er Sheva,0.0628,0.1389,0.7982
+5,2026-11-26,18:45,Red Bull Salzburg,Ararat-Armenia,0.0713,0.1536,0.7751
+5,2026-11-26,18:45,Viktoria Plzeň,Benfica,0.5688,0.2369,0.1943
+5,2026-11-26,18:45,Dinamo Zagreb,Bayer Leverkusen,0.5244,0.2261,0.2495
+5,2026-11-26,18:45,Olympiacos,Milan,0.4335,0.2414,0.3252
+5,2026-11-26,18:45,Marseille,Levski Sofia,0.0359,0.1092,0.8549
+5,2026-11-26,18:45,Union Saint-Gilloise,Lech Poznań,0.1582,0.2016,0.6402
+5,2026-11-26,18:45,Celta Vigo,Bournemouth,0.463,0.2499,0.287
+5,2026-11-26,21:00,Sparta Prague,AZ,0.3716,0.2424,0.386
+5,2026-11-26,21:00,Crystal Palace,Real Sociedad,0.1964,0.2249,0.5787
+5,2026-11-26,21:00,Ferencváros,Celje,0.2854,0.2418,0.4728
+5,2026-11-26,21:00,Juventus,Omonia,0.026,0.0913,0.8827
+5,2026-11-26,21:00,NEC,Rennes,0.5305,0.2422,0.2273
+5,2026-11-26,21:00,OFI,Anderlecht,0.5591,0.2282,0.2127
+5,2026-11-26,21:00,Lyon,Lillestrøm,0.043,0.12,0.8371
+5,2026-11-26,21:00,Torreense,Celtic,0.6357,0.2159,0.1484
+5,2026-11-26,21:00,Sunderland,Jagiellonia Białystok,0.0678,0.148,0.7842
+5,2026-11-26,21:00,TSG Hoffenheim,Sturm Graz,0.1014,0.1759,0.7227
+6,2026-12-10,18:45,AZ,Sturm Graz,0.14,0.1997,0.6603
+6,2026-12-10,18:45,Ararat-Armenia,NEC,0.502,0.2434,0.2545
+6,2026-12-10,18:45,Hapoel Be'er Sheva,Juventus,0.7781,0.159,0.0629
+6,2026-12-10,18:45,Jagiellonia Białystok,Crystal Palace,0.6806,0.1952,0.1242
+6,2026-12-10,18:45,Marseille,Celta Vigo,0.1928,0.214,0.5931
+6,2026-12-10,18:45,Omonia,Celtic,0.6357,0.2159,0.1484
+6,2026-12-10,18:45,Anderlecht,TSG Hoffenheim,0.453,0.2494,0.2977
+6,2026-12-10,18:45,Rennes,Dinamo Zagreb,0.152,0.2107,0.6373
+6,2026-12-10,21:00,Milan,Sunderland,0.2525,0.2272,0.5203
+6,2026-12-10,21:00,Bournemouth,Viktoria Plzeň,0.0787,0.1598,0.7615
+6,2026-12-10,21:00,Bayer Leverkusen,Beşiktaş,0.1663,0.2101,0.6236
+6,2026-12-10,21:00,Red Bull Salzburg,Sparta Prague,0.2246,0.2393,0.5361
+6,2026-12-10,21:00,Lech Poznań,Ferencváros,0.1378,0.191,0.6712
+6,2026-12-10,21:00,Celje,Olympiacos,0.647,0.2158,0.1372
+6,2026-12-10,21:00,Lyon,Union Saint-Gilloise,0.2056,0.2334,0.5609
+6,2026-12-10,21:00,Levski Sofia,Lillestrøm,0.2864,0.2424,0.4712
+6,2026-12-10,21:00,Real Sociedad,Torreense,0.049,0.1282,0.8228
+6,2026-12-10,21:00,Benfica,OFI,0.0307,0.095,0.8743
+7,2027-01-21,18:45,Beşiktaş,Union Saint-Gilloise,0.2728,0.2451,0.4822
+7,2027-01-21,18:45,Ararat-Armenia,Celje,0.2854,0.2418,0.4728
+7,2027-01-21,18:45,Ferencváros,Juventus,0.7781,0.159,0.0629
+7,2027-01-21,18:45,Jagiellonia Białystok,Lyon,0.6094,0.2212,0.1694
+7,2027-01-21,18:45,Lillestrøm,Bournemouth,0.7824,0.1544,0.0631
+7,2027-01-21,18:45,NEC,Benfica,0.5811,0.2358,0.1831
+7,2027-01-21,18:45,Olympiacos,TSG Hoffenheim,0.3506,0.2362,0.4132
+7,2027-01-21,18:45,Real Sociedad,Viktoria Plzeň,0.1389,0.2026,0.6586
+7,2027-01-21,18:45,Sturm Graz,OFI,0.1527,0.2019,0.6454
+7,2027-01-21,21:00,AZ,Dinamo Zagreb,0.2206,0.2476,0.5318
+7,2027-01-21,21:00,Bayer Leverkusen,Red Bull Salzburg,0.1496,0.1942,0.6562
+7,2027-01-21,21:00,Celtic,Marseille,0.4153,0.2448,0.3399
+7,2027-01-21,21:00,Crystal Palace,Sparta Prague,0.1074,0.1879,0.7046
+7,2027-01-21,21:00,Hapoel Be'er Sheva,Celta Vigo,0.6563,0.2031,0.1406
+7,2027-01-21,21:00,Lech Poznań,Torreense,0.1378,0.191,0.6712
+7,2027-01-21,21:00,Levski Sofia,Milan,0.7603,0.1666,0.073
+7,2027-01-21,21:00,Anderlecht,Sunderland,0.4992,0.2411,0.2597
+7,2027-01-21,21:00,Rennes,Omonia,0.0405,0.1114,0.8481
+8,2027-01-28,21:00,Milan,Ararat-Armenia,0.0304,0.0997,0.8699
+8,2027-01-28,21:00,Sparta Prague,Rennes,0.4705,0.2485,0.281
+8,2027-01-28,21:00,Bournemouth,Hapoel Be'er Sheva,0.0257,0.0936,0.8806
+8,2027-01-28,21:00,Red Bull Salzburg,Crystal Palace,0.472,0.2435,0.2845
+8,2027-01-28,21:00,Viktoria Plzeň,Jagiellonia Białystok,0.1988,0.2139,0.5873
+8,2027-01-28,21:00,Dinamo Zagreb,Sturm Graz,0.1881,0.2024,0.6095
+8,2027-01-28,21:00,Juventus,Real Sociedad,0.1822,0.2073,0.6105
+8,2027-01-28,21:00,Celje,NEC,0.502,0.2434,0.2545
+8,2027-01-28,21:00,OFI,Lech Poznań,0.4805,0.2488,0.2706
+8,2027-01-28,21:00,Marseille,Anderlecht,0.1262,0.1847,0.6891
+8,2027-01-28,21:00,Lyon,Bayer Leverkusen,0.3513,0.2521,0.3966
+8,2027-01-28,21:00,Omonia,Beşiktaş,0.6491,0.2107,0.1402
+8,2027-01-28,21:00,Union Saint-Gilloise,Celtic,0.2846,0.2378,0.4776
+8,2027-01-28,21:00,Celta Vigo,Lillestrøm,0.0623,0.1444,0.7932
+8,2027-01-28,21:00,Torreense,Olympiacos,0.647,0.2158,0.1372
+8,2027-01-28,21:00,Benfica,AZ,0.164,0.1932,0.6428
+8,2027-01-28,21:00,Sunderland,Levski Sofia,0.037,0.114,0.849
+8,2027-01-28,21:00,TSG Hoffenheim,Ferencváros,0.0457,0.1236,0.8307

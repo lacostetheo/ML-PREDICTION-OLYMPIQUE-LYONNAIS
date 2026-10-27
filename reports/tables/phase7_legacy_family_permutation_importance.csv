@@ -1,0 +1,19 @@
+model,family,n_columns,delta_log_loss,sd
+LogReg,Elo rating,4,0.04454,0.00464
+LogReg,Squad market value,8,0.02742,0.00235
+LogReg,Recent form (3/5/10 matches),30,0.00602,0.00141
+LogReg,xG proxy,18,0.00312,0.00114
+LogReg,Shots (on target / against),18,0.00293,0.00116
+LogReg,History depth,4,0.00097,0.00054
+LogReg,Fatigue / schedule,6,0.00064,0.0005
+LogReg,Venue form (home/away),9,0.00028,0.00063
+LogReg,League table,9,-0.00014,0.00051
+Gradient boosting,Elo rating,4,0.02484,0.00319
+Gradient boosting,Squad market value,8,0.02397,0.00234
+Gradient boosting,xG proxy,18,0.00424,0.00075
+Gradient boosting,Shots (on target / against),18,0.00175,0.00071
+Gradient boosting,Recent form (3/5/10 matches),30,0.00059,0.00031
+Gradient boosting,History depth,4,9e-05,0.00055
+Gradient boosting,Venue form (home/away),9,1e-05,0.00029
+Gradient boosting,League table,9,0.0,0.00038
+Gradient boosting,Fatigue / schedule,6,-1e-05,0.0001

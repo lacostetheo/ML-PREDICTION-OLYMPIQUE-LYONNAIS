@@ -1,0 +1,4 @@
+regime,vs,diff,ci_low,ci_high,significant
+refit,static,-0.0005,-0.00122,0.00022,False
+online,static,-5e-05,-0.00056,0.00046,False
+online,refit,0.00045,-0.00017,0.00107,False

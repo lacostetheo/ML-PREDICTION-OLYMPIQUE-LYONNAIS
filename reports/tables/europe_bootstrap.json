@@ -1,0 +1,20 @@
+{
+ "Value + domestic form vs Squad value only": {
+  "diff": -0.0005,
+  "ci_low": -0.0048,
+  "ci_high": 0.0038,
+  "significant": 0.0
+ },
+ "Squad value only vs Class frequency": {
+  "diff": -0.0515,
+  "ci_low": -0.0789,
+  "ci_high": -0.0224,
+  "significant": 1.0
+ },
+ "Domestic form only vs Class frequency": {
+  "diff": 0.0017,
+  "ci_low": -0.0033,
+  "ci_high": 0.0068,
+  "significant": 0.0
+ }
+}

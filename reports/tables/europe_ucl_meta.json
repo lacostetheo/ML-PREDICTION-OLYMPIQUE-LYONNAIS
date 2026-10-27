@@ -1,0 +1,27 @@
+{
+ "played": 29,
+ "total": 144,
+ "n_assumed": 3,
+ "sensitivity_title": {
+  "0.0": {
+   "Arsenal": 0.1406,
+   "Paris Saint-Germain": 0.1356,
+   "Real Madrid": 0.1352,
+   "Manchester City": 0.126,
+   "Barcelona": 0.1222,
+   "Bayern Munich": 0.1042,
+   "Liverpool": 0.058,
+   "Inter Milan": 0.0298
+  },
+  "0.3": {
+   "Arsenal": 0.144,
+   "Paris Saint-Germain": 0.137,
+   "Manchester City": 0.1234,
+   "Barcelona": 0.1192,
+   "Real Madrid": 0.1182,
+   "Bayern Munich": 0.0958,
+   "Liverpool": 0.0558,
+   "Inter Milan": 0.0336
+  }
+ }
+}

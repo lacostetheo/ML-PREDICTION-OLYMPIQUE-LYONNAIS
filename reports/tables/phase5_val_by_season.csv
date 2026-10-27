@@ -1,0 +1,9 @@
+,2021,2022
+Class frequency (naive),1.0779,1.0628
+Elo (LogReg),1.0025,0.9899
+LogReg: all features,0.9906,0.9812
+Random Forest,0.9935,0.9854
+Gradient Boosting,0.9919,0.9858
+SVM (RBF),1.0146,1.005
+Bookmaker Bet365 (reference),0.9772,0.9789
+Blend: LogReg + Gradient Boosting,0.9894,0.9818

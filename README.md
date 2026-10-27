@@ -23,7 +23,7 @@
 |---|---|
 | 🌐 **Interactive site** (futuristic, no install) | open **`site/ol-lab-standalone.html`** (after `make site`), or `site/index.html` from a clone. Published on GitHub Pages once merged to `main` — see [Website](#website). |
 | 📊 **Streamlit dashboard** | `make dashboard` |
-| 📄 **14-page report** | [`reports/final_report.pdf`](reports/final_report.pdf) |
+| 📄 **Research-paper style report (12 pages)** | [`reports/OL_ML_project.pdf`](reports/OL_ML_project.pdf) (built by `make report`, needs LaTeX); earlier long version: [`reports/final_report.pdf`](reports/final_report.pdf) |
 | 📓 **Notebooks** | [`notebooks/`](notebooks/) (executed, 01 → 08) |
 
 ## How it works

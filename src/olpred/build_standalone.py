@@ -11,8 +11,7 @@ def main() -> None:
     html = html.replace('<link rel="stylesheet" href="style.css">', f"<style>\n{css}\n</style>")
     html = html.replace('<script src="data.js"></script>', f"<script>\n{data}\n</script>")
     html = html.replace('<script src="app.js"></script>', f"<script>\n{js}\n</script>")
-    out = SITE / "standalone" / "ol-lab.html"
-    out.parent.mkdir(exist_ok=True)
+    out = SITE / "ol-lab-standalone.html"
     out.write_text(html)
     print(out, round(out.stat().st_size / 1e6, 2), "MB")
 

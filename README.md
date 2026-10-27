@@ -21,7 +21,7 @@
 
 | | How |
 |---|---|
-| 🌐 **Interactive site** (futuristic, no install) | open **`site/standalone/ol-lab.html`** (after `make site`), or `site/index.html` from a clone. Published on GitHub Pages once merged to `main` — see [Website](#website). |
+| 🌐 **Interactive site** (futuristic, no install) | open **`site/ol-lab-standalone.html`** (after `make site`), or `site/index.html` from a clone. Published on GitHub Pages once merged to `main` — see [Website](#website). |
 | 📊 **Streamlit dashboard** | `make dashboard` |
 | 📄 **14-page report** | [`reports/final_report.pdf`](reports/final_report.pdf) |
 | 📓 **Notebooks** | [`notebooks/`](notebooks/) (executed, 01 → 08) |
@@ -110,7 +110,7 @@ git clone https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS && cd 
 git checkout claude/olympique-lyonnais-ml-prediction-guhzl2     # until merged to main
 pip install -r requirements.txt        # Python 3.12; or: conda env create -f environment.yml
 make pipeline     # data → features → simulator backtest → OL predictions → simulations (~25 min, needs internet)
-make site         # export site data + build site/standalone/ol-lab.html
+make site         # export site data + build site/ol-lab-standalone.html
 make dashboard    # Streamlit app
 make all          # every experiment (~1 h)        make test   # 22 tests incl. the leakage test
 ```

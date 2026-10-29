@@ -209,6 +209,6 @@ tests/                leakage, metrics, online learning, dashboard, site data
 
 ---
 
-Author: Théo Lacoste, EDHEC Business School (BBA). Academic project, not betting advice. Code under the MIT licence, data under its own terms (see `docs/data_sources.md`).
+Author: Théo Lacoste, EDHEC Business School (BBA). Academic project, not betting advice. Data under its own terms (see `docs/data_sources.md`).
 
 I thank my machine learning courses and my internship as a data scientist, which helped me a lot on this project.

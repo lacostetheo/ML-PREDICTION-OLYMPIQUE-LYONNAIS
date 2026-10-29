@@ -6,7 +6,9 @@ Can a model predict football results better than Elo ratings or the bookmakers? 
 
 **[Read the paper (PDF)](reports/OL_ML_project.pdf)**
 
-![A tour of the website](docs/media/site_tour.gif)
+<p align="center">
+  <video src="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/raw/main/docs/media/site_tour.mp4" poster="https://github.com/lacostetheo/ML-PREDICTION-OLYMPIQUE-LYONNAIS/raw/main/reports/figures/site_picks.png" controls muted loop autoplay playsinline width="100%"></video>
+</p>
 
 ## In short
 

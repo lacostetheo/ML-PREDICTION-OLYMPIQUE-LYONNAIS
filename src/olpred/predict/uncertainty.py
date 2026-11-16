@@ -41,6 +41,12 @@ def match_intervals(models, X: pd.DataFrame, sigma: float, n_shocks: int = 20, s
     Returns, per fixture: p_away/p_draw/p_home (central, from the bootstrap mean),
     expected points of the home and away side, and the ``level`` interval from
     (a) model uncertainty only and (b) model + rating uncertainty."""
+    if len(X) == 0:  # no fixture in the list (international break): same columns, no rows
+        cols = ["p_away", "p_draw", "p_home", "exp_pts_home", "exp_pts_away"]
+        for tag in ("model", "total"):
+            cols += [f"p_{name}_{tag}_{side}" for name in ("home", "draw", "away") for side in ("lo", "hi")]
+            cols += [f"exp_pts_{who}_{tag}_{side}" for who in ("home", "away") for side in ("lo", "hi")]
+        return pd.DataFrame({c: pd.Series(dtype=float) for c in cols})
     rng = np.random.default_rng(seed)
     n = len(X)
     model_only, total = [], []

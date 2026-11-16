@@ -100,7 +100,11 @@ def strength_profile() -> None:
 
 def next_match() -> None:
     d = pd.read_csv(TABLES / "ol_next_round.csv")
-    r = d[d["involves_OL"]].iloc[0]
+    d = d[d["involves_OL"]] if "involves_OL" in d else d.iloc[0:0]
+    if d.empty:
+        print("no OL fixture in the next-round list (international break): figure not drawn")
+        return
+    r = d.iloc[0]
     home = r["home"] == OL
     w, dr, l = (r["p_home"], r["p_draw"], r["p_away"]) if home else (r["p_away"], r["p_draw"], r["p_home"])
     mw, md, ml = (r["mkt_home"], r["mkt_draw"], r["mkt_away"]) if home else (r["mkt_away"], r["mkt_draw"], r["mkt_home"])
